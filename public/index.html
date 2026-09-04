@@ -586,6 +586,11 @@ nav.tabs button:hover{background:none;color:var(--ink-2)}
         <option value="venezuelan">Venezuelan-born</option>
         <option value="anglo">South Florida</option>
       </select></div>
+    <div class="field" style="margin-top:14px"><label for="selScore">Scoring depth</label>
+      <select id="selScore">
+        <option value="default">Standard — cheaper, good scorecards</option>
+        <option value="complex">Deep — sharper coaching, about 2.5x the scoring cost</option>
+      </select></div>
     <div class="field" style="margin-top:14px"><label for="selMix">Who you practise against</label>
       <select id="selMix">
         <option value="real">Realistic mix</option>
@@ -1191,7 +1196,7 @@ function buildTurns(envNote){
     else if(x.role==="advisor") t.push({role:"user",content:"ADVISOR: "+x.text});
   });
   const last=t[t.length-1];
-  let tail="\n\n(Reply as JSON only.)";
+  let tail="\n\n"+prospectState()+"\n\n(Reply as JSON only.)";
   if(envNote) tail="\n\nENVIRONMENT: "+envNote+" Work it into your reply naturally."+tail;
   if(R.drill.id==="noadvice"&&R.m.hits.length) tail="\n\n(They just slipped into selling. React accordingly.)"+tail;
   if(last&&last.role==="user") last.content+=tail;
@@ -1828,10 +1833,13 @@ function looseJSON(t){
 function serverSampler(){
   return { json: async function(input,opts){
     const r=await fetch("/api/chat",{method:"POST",headers:chatHeaders(),
-      body:JSON.stringify({input:input,tier:(opts&&opts.modelTier)==="complex"?"complex":"default"})});
+      body:JSON.stringify({input:input,
+        tier:(opts&&opts.modelTier)||"default",
+        cachePrefix:!!(opts&&opts.cachePrefix)})});
     if(r.status===401){ location.reload(); throw new Error("session expired") }
     if(!r.ok) throw new Error("chat "+r.status);
     const j=await r.json();
+    if(j.usage) noteUsage(j.usage,j.model);
     return looseJSON(j.text);
   }};
 }
@@ -1948,14 +1956,17 @@ function prospectBrief(){
 '',
 '=== OUTPUT SCHEMA ===',
 '{"line":string,"interest":int,"interest_delta":int,"delta_reasons":[{"code":string,"points":int}],"outcome":"open|accepted|deflected|lost","revealed":[string],"steps_satisfied":[int],"steps_this_turn":[int],"pressure_played":null|string,"bridge_asked":bool,"bridge_quality":null|"clean"|"needy"|"premature"}',
-'',
-'=== STATE ===',
-'DIFFICULTY: '+L.k,'INTEREST: '+R.interest,'TURN: '+(R.m.turns+1),
-'STEPS_SATISFIED: ['+R.steps.join(",")+']',
-'PRESSURES_USED: ['+R.pressures.join(",")+']',
-'SOLVE_COUNT: '+R.solves,'CRITICIZE_COUNT: '+R.crits,'DEFLECT_COUNT: '+R.deflects,
-'SOLVE_IN_LAST_3: '+(R.lastSolveTurn>=0&&(R.m.turns-R.lastSolveTurn)<3)
   ].join("\n");
+}
+/* Volatile counters live on the LAST user turn so the long brief above stays
+   byte-identical all run and can be served from the prompt cache. */
+function prospectState(){
+  return ['=== STATE ===',
+  'DIFFICULTY: '+R.level.k,'INTEREST: '+R.interest,'TURN: '+(R.m.turns+1),
+  'STEPS_SATISFIED: ['+R.steps.join(",")+']',
+  'PRESSURES_USED: ['+R.pressures.join(",")+']',
+  'SOLVE_COUNT: '+R.solves,'CRITICIZE_COUNT: '+R.crits,'DEFLECT_COUNT: '+R.deflects,
+  'SOLVE_IN_LAST_3: '+(R.lastSolveTurn>=0&&(R.m.turns-R.lastSolveTurn)<3)].join("\n");
 }
 
 /* ---------- coach prompt (parallel, non-blocking) ---------- */
@@ -2348,7 +2359,9 @@ async function scoreRun(){
   };
   if(!SAMPLE) return fb();
   try{
-    const o=await SAMPLE.json(scoringPrompt(),{modelTier:"complex",cache:false});
+    let tier="default";
+    try{ tier=localStorage.getItem("sct.scoretier")||"default" }catch(e){}
+    const o=await SAMPLE.json(scoringPrompt(),{modelTier:tier,cache:false});
     const v=validateScoring(o);
     const ct=computeTotal(v.scores);
     const clean=function(x){ return String(x==null?"":x).replace(BANNED_VOCAB,"").replace(/\s+/g," ").trim() };
@@ -2413,6 +2426,7 @@ async function endRun(reason){
        flaggedPer10:R.m.turns?+(10*R.m.hits.length/R.m.turns).toFixed(2):0,
        ttbRatio:(R.m.bridgeAt!=null&&R.m.durationSec)?+(R.m.bridgeAt/R.m.durationSec).toFixed(2):null},
     feedback:R.feedback, coach:sc.coach, rubric:"1.0",
+    cost:R.cost||0, tokens:R.tokens||0, cacheReads:R.cacheReads||0,
     turns:R.turns.map(function(t){return{role:t.role,text:t.text,t:t.t}})
   };
   R.scores=sc.scores; R.total=sc.total; R.coach=sc.coach;
@@ -2717,7 +2731,11 @@ function renderProgress(){
     +'<div class="stat"><div class="k">Hard scenarios</div><div class="v">'+Math.round(100*cur.hardShare)+'%</div><div class="d">are you making it harder as you improve</div></div>'
     +'</div></div>';
 
-  box.innerHTML=tabs+insHtml+tiles+chart+constraint+split;
+  box.innerHTML=tabs+insHtml+tiles+chart+constraint+split
+    +'<div class="panel pad" style="margin-top:18px"><div class="row" style="margin-bottom:10px">'
+    +'<h2 style="flex:1">What this is costing</h2><span class="eyebrow">your API spend</span></div>'
+    +'<div id="spendBox"></div></div>';
+  renderSpend();
   $$("#progBody [data-period]").forEach(function(b){ b.onclick=function(){ PERIOD=b.dataset.period; renderProgress() } });
   $$("#progBody [data-cat]").forEach(function(b){ b.onclick=function(){ hidden[b.dataset.cat]=!hidden[b.dataset.cat]; renderProgress() } });
 }
@@ -3110,11 +3128,13 @@ function loadPrefs(){
     const t=localStorage.getItem("sct.tts"); if(t&&$("#selTts")) $("#selTts").value=t;
     const a=localStorage.getItem("sct.accent"); if(a&&$("#selAccent")) $("#selAccent").value=a;
     const m=localStorage.getItem("sct.mix"); if(m&&$("#selMix")) $("#selMix").value=m;
+    const sc=localStorage.getItem("sct.scoretier"); if(sc&&$("#selScore")) $("#selScore").value=sc;
   }catch(e){}
 }
 on("#selTts","change",function(){ try{localStorage.setItem("sct.tts",this.value)}catch(e){} paintVoiceStatus() });
 on("#selAccent","change",function(){ try{localStorage.setItem("sct.accent",this.value)}catch(e){} });
 on("#selMix","change",function(){ try{localStorage.setItem("sct.mix",this.value)}catch(e){} });
+on("#selScore","change",function(){ try{localStorage.setItem("sct.scoretier",this.value)}catch(e){} });
 
 on("#ttsSave","click",async function(){
   const v=$("#ttsKey").value.trim();
@@ -3151,6 +3171,67 @@ on("#btnPreviewF","click",function(){ previewVoice(true) });
   }catch(e){}
   loadPrefs(); paintVoiceStatus(); renderHome();
 })();
+
+
+/* ================= SPEND TRACKING ================= */
+/* $ per million tokens. Cache reads bill at a tenth of input, 5-minute writes at 1.25x. */
+const PRICES=[
+ [/opus/i,        {in:5,   out:25}],
+ [/sonnet/i,      {in:2,   out:10}],
+ [/haiku/i,       {in:1,   out:5}],
+ [/fable/i,       {in:10,  out:50}]
+];
+function priceOf(model){
+  for(const p of PRICES) if(p[0].test(String(model||""))) return p[1];
+  return {in:2,out:10};
+}
+function costOf(u,model){
+  if(!u) return 0;
+  const p=priceOf(model);
+  const fresh=Number(u.input_tokens||0);
+  const cw=Number(u.cache_creation_input_tokens||0);
+  const cr=Number(u.cache_read_input_tokens||0);
+  const out=Number(u.output_tokens||0);
+  return (fresh*p.in + cw*p.in*1.25 + cr*p.in*0.1 + out*p.out)/1e6;
+}
+function noteUsage(u,model){
+  const c=costOf(u,model);
+  if(R){ R.cost=(R.cost||0)+c; R.tokens=(R.tokens||0)+Number(u.input_tokens||0)+Number(u.output_tokens||0)
+    +Number(u.cache_read_input_tokens||0)+Number(u.cache_creation_input_tokens||0);
+    R.cacheReads=(R.cacheReads||0)+Number(u.cache_read_input_tokens||0); }
+  try{
+    const k="sct.spend."+new Date().toISOString().slice(0,10);
+    localStorage.setItem(k,String((Number(localStorage.getItem(k))||0)+c));
+  }catch(e){}
+}
+function spendToday(){
+  try{ return Number(localStorage.getItem("sct.spend."+new Date().toISOString().slice(0,10)))||0 }catch(e){ return 0 }
+}
+function spendWindow(days){
+  let t=0;
+  try{
+    for(let i=0;i<days;i++){
+      const d=new Date(Date.now()-i*864e5).toISOString().slice(0,10);
+      t+=Number(localStorage.getItem("sct.spend."+d))||0;
+    }
+  }catch(e){}
+  return t;
+}
+function money(n){ return n<0.01?"<$0.01":"$"+n.toFixed(n<1?3:2) }
+function renderSpend(){
+  const el=$("#spendBox"); if(!el) return;
+  const done=RUNS.filter(function(r){return r.cost});
+  const avg=done.length?done.reduce(function(a,r){return a+r.cost},0)/done.length:null;
+  const today=spendToday(), week=spendWindow(7);
+  el.innerHTML='<div class="grid3">'
+    +'<div class="stat"><div class="k">Today</div><div class="v">'+money(today)+'</div>'
+      +'<div class="d">'+RUNS.filter(function(r){return new Date(r.ts).toDateString()===new Date().toDateString()}).length+' runs</div></div>'
+    +'<div class="stat"><div class="k">Last 7 days</div><div class="v">'+money(week)+'</div>'
+      +'<div class="d">'+money(week/7)+' a day</div></div>'
+    +'<div class="stat"><div class="k">Per run</div><div class="v">'+(avg!=null?money(avg):"—")+'</div>'
+      +'<div class="d">'+(avg!=null?"at 20 a day that is "+money(avg*20)+"/day, "+money(avg*20*30)+"/month":"after your first scored run")+'</div></div>'
+    +'</div>';
+}
 
 </script>
 

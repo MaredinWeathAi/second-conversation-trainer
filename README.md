@@ -84,6 +84,27 @@ share of runs where the prospect named the real issue themselves. Periods below 
 minimum sample size never render an average - they show the raw values and say how
 many more reps are needed.
 
+## Cost
+
+Three levers, measured on an 8-turn run:
+
+| | per run | 20/day | 6 weeks at 20/day |
+|---|---|---|---|
+| Before | $0.124 | $2.47 | $104 |
+| Prompt-cached brief + Haiku coach + Sonnet scoring | $0.060 | $1.20 | $51 |
+| Same, keeping Opus scoring | $0.087 | $1.73 | $73 |
+
+- The prospect brief is ~1,900 tokens and was resent in full every turn. It now sits
+  alone in message 0 with `cache_control: ephemeral`, and every volatile counter moved
+  to the tail of the newest user turn, so the prefix is byte-identical all run and
+  turns 2..n read it at a tenth of the input price.
+- The per-exchange coach runs on the `quick` tier (Haiku), not Sonnet. It is 8 calls
+  a run, so it was the second-largest line.
+- Scoring depth is a setting. Standard is Sonnet; Deep is Opus at about 2.5x the
+  scoring cost.
+- Every response's `usage` is returned to the browser, priced client-side including
+  cache reads and writes, stored on the run, and shown under Progress.
+
 ## Casting
 
 Every run casts a prospect: sex drawn from a per-scenario probability weighted to who

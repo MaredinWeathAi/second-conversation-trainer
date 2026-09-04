@@ -24,7 +24,7 @@ const TTS_VOICE = { m: process.env.TTS_VOICE_M || "cedar", f: process.env.TTS_VO
 const KEY_FROM_ENV = !!KEY;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
 let PROVIDER = "none";
-let MODELS = { default: process.env.ANTHROPIC_MODEL || "", complex: process.env.ANTHROPIC_MODEL || "" };
+let MODELS = { default: process.env.ANTHROPIC_MODEL || "", complex: process.env.ANTHROPIC_MODEL || "", quick: process.env.ANTHROPIC_MODEL || "" };
 
 const redact = (s) => String(s == null ? "" : s).replace(/sk-[A-Za-z0-9_\-]{8,}/g, "sk-***REDACTED***");
 
@@ -147,11 +147,11 @@ async function detectProvider() {
       const ids = (list.data || []).map((m) => m.id);
       const newest = (re) => ids.filter((id) => re.test(id)).sort().reverse()[0];
       const fast = newest(/sonnet/i) || newest(/haiku/i) || ids[0];
-      MODELS = { default: fast, complex: newest(/opus/i) || fast };
+      MODELS = { default: fast, complex: newest(/opus/i) || fast, quick: newest(/haiku/i) || fast };
       console.log("[provider] anthropic  default=%s complex=%s", MODELS.default, MODELS.complex);
     } catch (e) {
       console.error("[provider] model detection failed:", redact(e.message));
-      MODELS = { default: "claude-sonnet-4-5", complex: "claude-sonnet-4-5" };
+      MODELS = { default: "claude-sonnet-4-5", complex: "claude-sonnet-4-5", quick: "claude-haiku-4-5" };
     }
     return;
   }
@@ -160,7 +160,7 @@ async function detectProvider() {
     const names = (tags.models || []).map((m) => m.name);
     if (!names.length) throw new Error("no local models");
     const pick = names.find((n) => /llama3|qwen|mistral/i.test(n)) || names[0];
-    PROVIDER = "ollama"; MODELS = { default: pick, complex: pick };
+    PROVIDER = "ollama"; MODELS = { default: pick, complex: pick, quick: pick };
     console.log("[provider] ollama model=%s", pick);
   } catch (e) { PROVIDER = "none"; console.log("[provider] none"); }
 }
@@ -355,7 +355,9 @@ app.post("/api/chat", async (req, res) => {
   if (PROVIDER === "none" && !userKey) return res.status(503).json({ error: "no_provider", message: "No API key yet. Add one with the Key button." });
 
   const input = req.body && req.body.input;
-  const tier = (req.body && req.body.tier) === "complex" ? "complex" : "default";
+  const tierIn = (req.body && req.body.tier) || "default";
+  const tier = (tierIn === "complex" || tierIn === "quick") ? tierIn : "default";
+  const cachePrefix = !!(req.body && req.body.cachePrefix);
   let messages = typeof input === "string" ? [{ role: "user", content: input }]
     : Array.isArray(input) ? input.filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string") : null;
   if (!messages || !messages.length) return res.status(400).json({ error: "bad_input" });
@@ -364,14 +366,22 @@ app.post("/api/chat", async (req, res) => {
   if (bytes > 200000) return res.status(413).json({ error: "too_large" });
 
   try {
-    let text, model;
+    let text, model, usage = null;
     if (userKey || PROVIDER === "anthropic") {
+      /* Cache the long static brief: it is message 0 and is byte-identical all run,
+         so turns 2..n read it at a tenth of the input price. */
+      let msgs = messages;
+      if (cachePrefix && messages[0] && typeof messages[0].content === "string" && messages[0].content.length > 4000) {
+        msgs = messages.slice();
+        msgs[0] = { role: msgs[0].role, content: [{ type: "text", text: msgs[0].content, cache_control: { type: "ephemeral" } }] };
+      }
       const out = await anthropic("/v1/messages", "POST", {
         model: MODELS[tier] || MODELS.default || "claude-sonnet-4-5",
-        max_tokens: tier === "complex" ? 2000 : 700, messages
+        max_tokens: tier === "complex" ? 2000 : (tier === "quick" ? 400 : 700), messages: msgs
       }, userKey);
       text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
       model = out.model;
+      usage = out.usage || null;
     } else {
       const out = await ollama("/api/chat", "POST", {
         model: MODELS[tier] || MODELS.default, messages, stream: false, format: "json",
@@ -379,7 +389,7 @@ app.post("/api/chat", async (req, res) => {
       });
       text = (out.message && out.message.content) || ""; model = out.model;
     }
-    res.json({ text, model });
+    res.json({ text, model, usage });
   } catch (e) {
     console.error("[chat]", e.status || "", redact(e.message));
     res.status(e.status === 429 ? 429 : 502).json({ error: "upstream", message: redact(e.message) });
