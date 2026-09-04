@@ -239,7 +239,10 @@ app.post("/api/login", async (req, res) => {
   const l = limit("login:" + (known ? "k:" : "") + ip, known ? 60 : 10, 15 * 60000);
   if (!l.ok) return res.status(429).json({ ok: false, message: "Too many attempts. Wait " + l.retryAfter + "s." });
   await sleep(300 + Math.floor(Math.random() * 200));
-  const given = String((req.body && req.body.passcode) || "");
+  let given = String((req.body && req.body.passcode) || "").trim();
+  /* A saved password, a stray space or a keyboard's smart punctuation should not cost
+     him a login. When the PIN is all digits, judge only the digits he entered. */
+  if (/^\d+$/.test(PASSCODE)) given = given.replace(/\D/g, "");
   const a = crypto.createHash("sha256").update(given).digest();
   const b = crypto.createHash("sha256").update(PASSCODE).digest();
   if (!crypto.timingSafeEqual(a, b)) {
@@ -432,11 +435,10 @@ input{width:100%;padding:14px;font-size:26px;letter-spacing:.34em;text-align:cen
 input[hidden]{display:none}
 button{width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:600;border:0;border-radius:8px;background:#8C2F3B;color:#fff}
 .e{color:#BE4038;font-size:13.5px;margin-top:10px;min-height:18px}</style></head><body>
-<form id="f" action="/api/login" method="post"><h1>Second Conversation Trainer</h1><p>Enter your PIN.</p>
-<input id="u" name="username" type="text" autocomplete="username" value="maredin" hidden readonly>
+<form id="f" autocomplete="off"><h1>Second Conversation Trainer</h1><p>Enter your six-digit PIN.</p>
 <label for="p">PIN</label>
-<input id="p" name="password" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
- autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+<input id="p" name="sct-pin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+ autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" required>
 <button type="submit">Unlock</button><div class="e" id="e"></div></form>
 <script>var f=document.getElementById("f"),p=document.getElementById("p"),e=document.getElementById("e"),busy=false;
 async function go(){if(busy)return;busy=true;e.textContent="Checking…";
@@ -445,7 +447,7 @@ body:JSON.stringify({passcode:p.value})});var j=await r.json();
 if(j.ok){location.reload();return}e.textContent=j.message||"Wrong PIN.";p.value="";p.focus()}
 catch(x){e.textContent="Could not reach the server."}busy=false}
 f.addEventListener("submit",function(ev){ev.preventDefault();go()});
-p.addEventListener("input",function(){if(p.value.length===6)go()});
+p.addEventListener("input",function(){p.value=p.value.replace(/\D/g,"").slice(0,6);if(p.value.length===6)go()});
 p.focus();</script></body></html>`;
 
 loadSavedKey();
