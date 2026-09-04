@@ -12,7 +12,9 @@ const KEY_FILE = path.join(DATA_DIR, "key");
 
 const PASSCODE = (process.env.APP_PASSCODE || "").trim();
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 180;
+const DEVICE_DAYS = 730;
+const DEVICE_COOKIE = "sct_d";
 const COOKIE = "sct_s";
 
 let KEY = process.env.ANTHROPIC_API_KEY || "";
@@ -51,22 +53,44 @@ function cookies(req) {
   return out;
 }
 function authed(req) { return !PASSCODE || valid(cookies(req)[COOKIE]); }
+function mintDevice() {
+  const v = crypto.randomBytes(9).toString("base64url") + "." + String(Date.now() + DEVICE_DAYS * 864e5);
+  return v + "." + sign(v);
+}
+function knownDevice(req) {
+  const tok = cookies(req)[DEVICE_COOKIE];
+  if (!tok) return false;
+  const i = tok.lastIndexOf(".");
+  if (i < 1) return false;
+  const body = tok.slice(0, i), sig = tok.slice(i + 1), expect = sign(body);
+  if (sig.length !== expect.length) return false;
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return false;
+  return Number(body.split(".")[1]) > Date.now();
+}
 
 /* ---------------- rate limiting ---------------- */
 const buckets = new Map();
-/* Global failed-login counter: per-IP limits do nothing against a botnet, so
-   failures anywhere on the server add a progressive delay for everyone. */
-let globalFails = 0, globalFailWindow = 0;
+/* The passcode is short, so the lockout does the work. Failures from devices that
+   have never logged in are counted globally; past a threshold every unknown device is
+   refused outright, and each repeat lockout lasts longer. A device that has logged in
+   before carries a signed token and is never locked out, so the owner cannot be
+   denied his own app by someone else's brute force. */
+const LOCK_STEPS = [15 * 60000, 60 * 60000, 6 * 3600000, 24 * 3600000];
+const FAILS_BEFORE_LOCK = 15;
+let gFails = 0, gWindow = 0, gLockUntil = 0, gLockStep = -1;
 function noteFail() {
   const now = Date.now();
-  if (now > globalFailWindow) { globalFails = 0; globalFailWindow = now + 15 * 60000; }
-  globalFails++;
+  if (now > gWindow) { gFails = 0; gWindow = now + 15 * 60000; }
+  gFails++;
+  if (gFails >= FAILS_BEFORE_LOCK) {
+    gLockStep = Math.min(gLockStep + 1, LOCK_STEPS.length - 1);
+    gLockUntil = now + LOCK_STEPS[gLockStep];
+    gFails = 0; gWindow = now + 15 * 60000;
+    console.warn("[auth] global lockout for unknown devices, %d minutes", LOCK_STEPS[gLockStep] / 60000);
+  }
 }
-function failDelayMs() {
-  if (Date.now() > globalFailWindow) return 0;
-  if (globalFails < 5) return 0;
-  return Math.min(8000, 250 * Math.pow(2, Math.min(5, globalFails - 5)));
-}
+function lockedOut() { return Date.now() < gLockUntil; }
+function clearLock() { gFails = 0; gLockUntil = 0; gLockStep = -1; }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 setInterval(() => {
   const now = Date.now();
@@ -204,22 +228,31 @@ app.get("/api/ping", (req, res) => res.json({ ok: true }));
 
 app.post("/api/login", async (req, res) => {
   const ip = ipOf(req);
-  const l = limit("login:" + ip, 10, 15 * 60000);
-  if (!l.ok) return res.status(429).json({ ok: false, message: "Too many attempts. Wait " + l.retryAfter + "s." });
   if (!PASSCODE) return res.status(503).json({ ok: false, message: "APP_PASSCODE is not configured on the server." });
-  const d = failDelayMs();
-  if (d) await sleep(d);
+  const known = knownDevice(req);
+  if (!known && lockedOut()) {
+    const mins = Math.ceil((gLockUntil - Date.now()) / 60000);
+    return res.status(429).json({ ok: false, message: "Locked for " + mins + " more minutes. Try again then." });
+  }
+  /* A device that has logged in before gets a far looser per-IP allowance, so a
+     fat-fingered PIN on a shared cellular IP never locks the owner out. */
+  const l = limit("login:" + (known ? "k:" : "") + ip, known ? 60 : 10, 15 * 60000);
+  if (!l.ok) return res.status(429).json({ ok: false, message: "Too many attempts. Wait " + l.retryAfter + "s." });
+  await sleep(300 + Math.floor(Math.random() * 200));
   const given = String((req.body && req.body.passcode) || "");
   const a = crypto.createHash("sha256").update(given).digest();
   const b = crypto.createHash("sha256").update(PASSCODE).digest();
   if (!crypto.timingSafeEqual(a, b)) {
-    noteFail();
-    console.warn("[auth] failed login from %s (ip %d, global %d)", ip, l.n, globalFails);
-    return res.status(401).json({ ok: false, message: "Wrong passcode." });
+    if (!known) noteFail();
+    console.warn("[auth] failed login from %s (ip %d, global %d, known %s)", ip, l.n, gFails, known);
+    return res.status(401).json({ ok: false, message: "Wrong PIN." });
   }
   buckets.delete("login:" + ip);
-  globalFails = 0;
-  res.setHeader("Set-Cookie", COOKIE + "=" + mint() + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + SESSION_DAYS * 86400);
+  clearLock();
+  res.setHeader("Set-Cookie", [
+    COOKIE + "=" + mint() + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + SESSION_DAYS * 86400,
+    DEVICE_COOKIE + "=" + mintDevice() + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + DEVICE_DAYS * 86400
+  ]);
   res.json({ ok: true });
 });
 app.post("/api/logout", (req, res) => {
@@ -385,19 +418,25 @@ form{background:#fff;border:1px solid #DDDBD4;border-radius:12px;padding:26px;wi
 box-shadow:0 8px 24px -12px rgba(0,0,0,.2)}
 h1{font:600 19px/1.2 Georgia,serif;margin:0 0 6px}p{margin:0 0 18px;color:#7C8088;font-size:14px}
 label{display:block;font:500 11px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:#7C8088;margin-bottom:7px}
-input{width:100%;padding:11px;font-size:16px;border:1px solid #C6C3BA;border-radius:8px;background:#fff;color:#17191C}
+input{width:100%;padding:14px;font-size:26px;letter-spacing:.34em;text-align:center;border:1px solid #C6C3BA;border-radius:10px;background:#fff;color:#17191C;font-family:ui-monospace,monospace}
+input[hidden]{display:none}
 button{width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:600;border:0;border-radius:8px;background:#8C2F3B;color:#fff}
 .e{color:#BE4038;font-size:13.5px;margin-top:10px;min-height:18px}</style></head><body>
-<form id="f"><h1>Second Conversation Trainer</h1><p>This trainer is private. Enter your passcode.</p>
-<label for="p">Passcode</label>
-<input id="p" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+<form id="f" action="/api/login" method="post"><h1>Second Conversation Trainer</h1><p>Enter your PIN.</p>
+<input id="u" name="username" type="text" autocomplete="username" value="maredin" hidden readonly>
+<label for="p">PIN</label>
+<input id="p" name="password" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+ autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
 <button type="submit">Unlock</button><div class="e" id="e"></div></form>
-<script>document.getElementById("f").addEventListener("submit",async function(ev){ev.preventDefault();
-var e=document.getElementById("e");e.textContent="Checking…";
+<script>var f=document.getElementById("f"),p=document.getElementById("p"),e=document.getElementById("e"),busy=false;
+async function go(){if(busy)return;busy=true;e.textContent="Checking…";
 try{var r=await fetch("/api/login",{method:"POST",headers:{"content-type":"application/json"},
-body:JSON.stringify({passcode:document.getElementById("p").value})});var j=await r.json();
-if(j.ok){location.reload()}else{e.textContent=j.message||"Wrong passcode."}}
-catch(x){e.textContent="Could not reach the server."}});</script></body></html>`;
+body:JSON.stringify({passcode:p.value})});var j=await r.json();
+if(j.ok){location.reload();return}e.textContent=j.message||"Wrong PIN.";p.value="";p.focus()}
+catch(x){e.textContent="Could not reach the server."}busy=false}
+f.addEventListener("submit",function(ev){ev.preventDefault();go()});
+p.addEventListener("input",function(){if(p.value.length===6)go()});
+p.focus();</script></body></html>`;
 
 loadSavedKey();
 detectProvider().finally(() => {

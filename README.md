@@ -26,9 +26,15 @@ casual social conversation to a qualified second meeting — not a sales script.
 The whole app is behind a passcode. Nothing — not the page, not an asset, not an
 API route — is served without a valid session, except `GET /api/ping`.
 
-- `APP_PASSCODE` gates everything. Compared in constant time, 10 attempts per IP
-  per 15 minutes.
-- Session is an HMAC-signed cookie (`HttpOnly; Secure; SameSite=Lax`, 30 days)
+- `APP_PASSCODE` gates everything, compared in constant time. It is a short PIN, so
+  the lockout carries the weight rather than the length: 15 failures from devices
+  that have never logged in trigger a hard global lockout, escalating 15 min -> 1 h
+  -> 6 h -> 24 h on repeats. That caps an attacker at about 1,440 guesses a day.
+- A device that has logged in before carries a separate signed token (2 years) and is
+  exempt from that lockout, so a stranger's brute force can never lock the owner out
+  of his own app. It also gets a looser per-IP allowance (60 vs 10 per 15 min).
+- Every login attempt costs a 300-500 ms server-side delay regardless of outcome.
+- Session is an HMAC-signed cookie (`HttpOnly; Secure; SameSite=Lax`, 180 days)
   keyed on `SESSION_SECRET`. Set that variable so sessions survive a redeploy.
 - Rate limits per IP: 60 model calls / 10 min, 600 / day, 12 key attempts / hour.
 - Request caps: 256 KB body, 60 turns, 200 KB of prompt text.
