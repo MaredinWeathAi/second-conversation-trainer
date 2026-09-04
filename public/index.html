@@ -1,0 +1,1293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Second Conversation Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F3F0; --surface:#FFFFFF; --surface-2:#EBEAE6; --sunk:#E4E2DC;
+  --line:#DDDBD4; --line-2:#C6C3BA;
+  --ink:#17191C; --ink-2:#4B4E54; --ink-3:#7C8088;
+  --accent:#8C2F3B; --accent-2:#A94654; --accent-soft:#F3E5E6;
+  --good:#2E6B52; --good-soft:#E1EEE7;
+  --warn:#9C6C15; --warn-soft:#F6EAD3;
+  --bad:#BE4038; --bad-soft:#F8E3E1;
+  --shadow:0 1px 2px rgba(23,25,28,.05),0 8px 24px -12px rgba(23,25,28,.18);
+  --r:10px;
+  --f-display:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#121316; --surface:#1A1C20; --surface-2:#212429; --sunk:#0E0F12;
+    --line:#2B2F35; --line-2:#3C424A;
+    --ink:#E9EAEC; --ink-2:#AFB4BB; --ink-3:#7B8189;
+    --accent:#D2707B; --accent-2:#E08A94; --accent-soft:#2C1B1F;
+    --good:#63B792; --good-soft:#16281F;
+    --warn:#D2A044; --warn-soft:#2A2113;
+    --bad:#E27C73; --bad-soft:#2E1917;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121316; --surface:#1A1C20; --surface-2:#212429; --sunk:#0E0F12;
+  --line:#2B2F35; --line-2:#3C424A;
+  --ink:#E9EAEC; --ink-2:#AFB4BB; --ink-3:#7B8189;
+  --accent:#D2707B; --accent-2:#E08A94; --accent-soft:#2C1B1F;
+  --good:#63B792; --good-soft:#16281F;
+  --warn:#D2A044; --warn-soft:#2A2113;
+  --bad:#E27C73; --bad-soft:#2E1917;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- chrome ---------- */
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:20px;
+  padding:12px 22px;background:color-mix(in srgb,var(--ground) 88%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.mark{display:flex;align-items:baseline;gap:9px;font-family:var(--f-display);font-size:19px;font-weight:600;letter-spacing:-.01em}
+.mark i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:block;transform:translateY(-3px)}
+.mark span{color:var(--ink-3);font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase}
+nav{display:flex;gap:2px;margin-left:auto}
+nav button{background:none;border:0;padding:7px 13px;border-radius:7px;font-size:13.5px;font-weight:500;color:var(--ink-3)}
+nav button:hover{color:var(--ink);background:var(--surface-2)}
+nav button[aria-current="page"]{color:var(--ink);background:var(--surface);box-shadow:var(--shadow)}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+.view{display:none}.view.on{display:block}
+
+/* ---------- type ---------- */
+h1{font-family:var(--f-display);font-size:clamp(30px,4.4vw,44px);font-weight:500;line-height:1.08;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-size:23px;font-weight:500;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h3{font-size:14px;font-weight:600;margin:0;letter-spacing:-.005em}
+.eyebrow{font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.lede{font-size:16.5px;color:var(--ink-2);max-width:62ch;margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.dim{color:var(--ink-3)}
+
+/* ---------- primitives ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:18px 20px}
+.row{display:flex;gap:10px;align-items:center}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:9px 16px;font-size:14px;font-weight:500;transition:.14s}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+:root[data-theme="dark"] .btn.primary,:root:not([data-theme="light"]) .btn.primary{color:#17191C}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn.primary{color:#fff}}
+.btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn.ghost{background:none;border-color:transparent;color:var(--ink-3)}
+.btn.ghost:hover{color:var(--ink);background:var(--surface-2)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:5px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+
+/* ---------- deck ---------- */
+.hero{display:grid;grid-template-columns:1.25fr .9fr;gap:34px;align-items:end;padding:8px 0 30px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.hero .rule{font-family:var(--f-display);font-size:17px;font-style:italic;color:var(--ink-2);border-left:2px solid var(--accent);padding-left:16px;margin:0}
+.hero .rule b{font-style:normal;font-weight:500;color:var(--ink)}
+.seq{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px;align-items:center}
+.seq span{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:var(--surface)}
+.seq span.x{color:var(--bad);border-color:var(--bad);background:var(--bad-soft);text-decoration:line-through}
+.seq i{color:var(--ink-3);font-style:normal;font-size:11px}
+
+.setup{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+select,input[type=text],textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:9px 11px;width:100%}
+.launch{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-top:6px}
+
+.recent{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:14px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:13px 14px;display:flex;flex-direction:column;gap:7px;text-align:left;width:100%}
+.rcard:hover{border-color:var(--line-2)}
+.rcard .n{font-family:var(--f-mono);font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.rcard .t{font-size:13px;font-weight:500;line-height:1.3}
+
+/* ---------- live ---------- */
+.stage{display:grid;grid-template-columns:1fr 314px;gap:20px;align-items:start}
+.script{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;min-height:440px;max-height:calc(100vh - 200px)}
+.scroll{overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px;flex:1}
+.turn{display:grid;grid-template-columns:66px 1fr;gap:14px;align-items:baseline}
+.turn .who{font-family:var(--f-mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);padding-top:5px}
+.turn.p .txt{font-family:var(--f-display);font-size:18.5px;line-height:1.45;font-style:italic;color:var(--ink)}
+.turn.a .who{color:var(--accent)}
+.turn.a .txt{font-size:15px;line-height:1.55;color:var(--ink-2)}
+.turn.env{grid-template-columns:66px 1fr}
+.turn.env .txt{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.02em;color:var(--warn);
+  background:var(--warn-soft);padding:7px 11px;border-radius:6px;display:inline-block}
+.turn .flags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.thinking{display:inline-flex;gap:4px;align-items:center}
+.thinking i{width:5px;height:5px;border-radius:50%;background:var(--ink-3);display:block;animation:bp 1.2s infinite}
+.thinking i:nth-child(2){animation-delay:.15s}.thinking i:nth-child(3){animation-delay:.3s}
+@keyframes bp{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+.dock{border-top:1px solid var(--line);padding:14px 18px;display:flex;flex-direction:column;gap:11px;background:var(--surface-2);border-radius:0 0 var(--r) var(--r)}
+.miclane{display:flex;gap:13px;align-items:center}
+.mic{width:52px;height:52px;border-radius:50%;border:1px solid var(--line-2);background:var(--surface);
+  display:grid;place-items:center;flex:none;position:relative;transition:.18s}
+.mic svg{width:21px;height:21px}
+.mic.live{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.mic.live::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--accent);opacity:.5;animation:ring 1.5s ease-out infinite}
+@keyframes ring{0%{transform:scale(.9);opacity:.6}100%{transform:scale(1.22);opacity:0}}
+.mic.speak{border-color:var(--ink-3);color:var(--ink-3)}
+.heard{flex:1;min-height:34px;font-size:15px;line-height:1.4;color:var(--ink)}
+.heard .i{color:var(--ink-3)}
+.heard .hint{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;color:var(--ink-3)}
+.dockrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dockrow .btn{padding:6px 11px;font-size:12.5px}
+#typed{flex:1;min-width:180px}
+
+.signals{display:flex;flex-direction:column;gap:12px;position:sticky;top:76px}
+.meter{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .5s}
+.sig{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+.sig:last-child{border-bottom:0}
+.sig .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)}
+.sig .v{font-family:var(--f-mono);font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.sig .v.warn{color:var(--warn)}.sig .v.bad{color:var(--bad)}.sig .v.good{color:var(--good)}
+.brief{font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.brief b{color:var(--ink);font-weight:600}
+.hitlist{display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto}
+.hit{font-family:var(--f-mono);font-size:11px;color:var(--bad);background:var(--bad-soft);padding:5px 8px;border-radius:5px}
+
+/* ---------- scorecard ---------- */
+.total{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.total .big{font-family:var(--f-mono);font-size:62px;font-weight:600;letter-spacing:-.04em;line-height:.9}
+.total .of{font-family:var(--f-mono);font-size:17px;color:var(--ink-3)}
+.rubric{display:flex;flex-direction:column;gap:0;margin-top:6px}
+.rr{display:grid;grid-template-columns:200px 1fr 46px;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.rr:last-child{border-bottom:0}
+.rr .nm{font-size:13.5px;font-weight:500}
+.rr .bar{height:7px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.rr .bar i{display:block;height:100%;border-radius:4px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.rr .scv{font-family:var(--f-mono);font-size:16px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.rr .why{grid-column:1/-1;font-size:13px;color:var(--ink-3);line-height:1.5;margin-top:-2px}
+.coach{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.cbox{border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:var(--surface)}
+.cbox.hi{border-left:3px solid var(--good)}
+.cbox.lo{border-left:3px solid var(--bad)}
+.cbox.fix{border-left:3px solid var(--accent);grid-column:1/-1}
+.cbox h3{margin-bottom:7px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.cbox p{margin:0;font-size:14px;line-height:1.55}
+.quote{font-family:var(--f-display);font-size:17px;font-style:italic;line-height:1.45;margin:8px 0 0}
+
+/* ---------- progress ---------- */
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.stat .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.stat .v{font-family:var(--f-mono);font-size:30px;font-weight:600;letter-spacing:-.03em;margin-top:5px;line-height:1}
+.stat .d{font-size:12.5px;color:var(--ink-3);margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.lg{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border:1px solid var(--line);border-radius:20px;background:var(--surface)}
+.lg i{width:9px;height:9px;border-radius:50%;display:block}
+.lg.off{opacity:.35}
+.chartbox{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:500;padding:8px 10px;border-bottom:1px solid var(--line-2)}
+td{padding:9px 10px;border-bottom:1px solid var(--line)}
+td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- library ---------- */
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.sc{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:15px 17px}
+.sc .no{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em}
+.sc h3{margin:3px 0 9px}
+.sc .said{font-family:var(--f-display);font-size:16px;font-style:italic;line-height:1.4;margin:0 0 11px;color:var(--ink)}
+.sc dl{margin:0;display:flex;flex-direction:column;gap:7px}
+.sc dt{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.sc dd{margin:2px 0 0;font-size:13.5px;line-height:1.45}
+.sc dd.x{color:var(--bad)}
+.qbank{columns:2;column-gap:24px}
+.qbank .g{break-inside:avoid;margin-bottom:16px}
+.qbank ul{margin:6px 0 0;padding-left:17px;display:flex;flex-direction:column;gap:5px}
+.qbank li{font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+
+.banner{display:flex;gap:11px;align-items:flex-start;padding:11px 14px;border-radius:8px;background:var(--warn-soft);
+  color:var(--warn);font-size:13px;line-height:1.45;margin-bottom:14px}
+.banner b{display:block;color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;gap:20px;align-items:start}
+  .stage{grid-template-columns:1fr}
+  .signals{position:static}
+  .setup{grid-template-columns:1fr}
+  .coach{grid-template-columns:1fr}
+  .qbank{columns:1}
+  .rr{grid-template-columns:1fr 46px}
+  .rr .bar{grid-column:1/-1;order:3}
+  .script{max-height:none}
+}
+</style>
+
+<header class="top">
+  <div class="mark"><i></i>Second Conversation Trainer <span id="lvlTag">Adaptive</span></div>
+  <nav>
+    <button data-go="deck" aria-current="page">Train</button>
+    <button data-go="progress">Progress</button>
+    <button data-go="library">Library</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<!-- ============ DECK ============ -->
+<section class="view on" id="v-deck">
+  <div class="hero">
+    <div>
+      <p class="eyebrow">The 90-second window</p>
+      <h1>You are not training a script. You are training restraint.</h1>
+      <div class="seq">
+        <span class="x">Comment</span><i>&rarr;</i><span class="x">Solution</span>
+        <i style="padding:0 8px">is the leak.</i>
+      </div>
+      <div class="seq">
+        <span>Comment</span><i>&rarr;</i><span>Question</span><i>&rarr;</i><span>Clarify</span><i>&rarr;</i><span>Reframe</span><i>&rarr;</i><span>Second conversation</span>
+      </div>
+    </div>
+    <p class="rule">In a formal meeting, solving builds trust.<br>In a social setting, solving too early <b>lowers your status.</b></p>
+  </div>
+
+  <div class="panel pad" style="margin-bottom:20px">
+    <div class="row" style="margin-bottom:14px"><h2 style="flex:1">Set the room</h2><span class="chip acc" id="deckLvl">Difficulty: adaptive</span></div>
+    <div class="setup">
+      <div class="field"><label for="selSetting">Setting</label><select id="selSetting"></select></div>
+      <div class="field"><label for="selProspect">Prospect</label><select id="selProspect"></select></div>
+      <div class="field"><label for="selScenario">Opening trigger</label><select id="selScenario"></select></div>
+      <div class="field"><label for="selDrill">Constraint drill</label><select id="selDrill"></select></div>
+    </div>
+    <div class="launch">
+      <button class="btn primary" id="btnStart">Start the conversation</button>
+      <button class="btn" id="btnRandom">Randomize</button>
+      <button class="btn ghost" id="btnReplay" hidden>Replay last scenario</button>
+      <span class="dim" style="font-size:13px" id="micNote"></span>
+    </div>
+  </div>
+
+  <div class="row" style="margin-bottom:8px"><h2 style="flex:1">Recent runs</h2><span class="eyebrow" id="runCount"></span></div>
+  <div class="recent" id="recentWrap"></div>
+</section>
+
+<!-- ============ LIVE ============ -->
+<section class="view" id="v-live">
+  <div class="row" style="margin-bottom:14px">
+    <div style="flex:1">
+      <p class="eyebrow" id="liveSetting">—</p>
+      <h2 id="liveWho">—</h2>
+    </div>
+    <button class="btn" id="btnEnd">End &amp; score</button>
+    <button class="btn ghost" id="btnAbort">Abandon</button>
+  </div>
+  <div id="micBanner"></div>
+  <div class="stage">
+    <div class="script">
+      <div class="scroll" id="scroll"></div>
+      <div class="dock">
+        <div class="miclane">
+          <button class="mic" id="micBtn" aria-label="Toggle microphone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v4M8.5 22h7"/></svg>
+          </button>
+          <div class="heard" id="heard"><span class="hint">Press start — the prospect speaks first.</span></div>
+        </div>
+        <div class="dockrow">
+          <input type="text" id="typed" placeholder="…or type your reply and press Enter" autocomplete="off">
+          <button class="btn" id="btnSend">Send</button>
+          <button class="btn ghost" id="btnCutIn" hidden>Cut in</button>
+          <button class="btn ghost" id="btnRepeat">Say again</button>
+          <label class="chip" style="cursor:pointer"><input type="checkbox" id="chkVoice" checked style="width:auto;margin:0 4px 0 0">Voice</label>
+        </div>
+      </div>
+    </div>
+
+    <aside class="signals">
+      <div class="panel pad">
+        <p class="eyebrow" style="margin-bottom:8px">Their read on you</p>
+        <div class="meter"><i id="interestBar" style="width:18%"></i></div>
+        <div class="row" style="justify-content:space-between;margin-top:7px">
+          <span class="mono dim" style="font-size:11px">GUARDED</span>
+          <span class="mono dim" style="font-size:11px">CURIOUS</span>
+        </div>
+        <p class="brief" style="margin-top:12px" id="briefText"></p>
+      </div>
+      <div class="panel pad">
+        <p class="eyebrow" style="margin-bottom:4px">Live signals</p>
+        <div class="sig"><span class="k">Window</span><span class="v" id="sigTime">0:00</span></div>
+        <div class="sig"><span class="k">Your talk share</span><span class="v" id="sigTalk">—</span></div>
+        <div class="sig"><span class="k">Questions asked</span><span class="v" id="sigQ">0</span></div>
+        <div class="sig"><span class="k">Advice jumps</span><span class="v" id="sigBan">0</span></div>
+        <div class="sig"><span class="k">Bridge</span><span class="v" id="sigBridge">—</span></div>
+      </div>
+      <div class="panel pad" id="drillBox" hidden>
+        <p class="eyebrow" style="margin-bottom:6px">Constraint</p>
+        <p class="brief" id="drillText"></p>
+      </div>
+      <div class="panel pad" id="hitBox" hidden>
+        <p class="eyebrow" style="margin-bottom:8px">Flagged language</p>
+        <div class="hitlist" id="hitList"></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ SCORE ============ -->
+<section class="view" id="v-score">
+  <div id="scoreBody"></div>
+</section>
+
+<!-- ============ PROGRESS ============ -->
+<section class="view" id="v-progress">
+  <div class="row" style="margin-bottom:16px">
+    <div style="flex:1"><p class="eyebrow">Analytics</p><h1 style="font-size:32px">Where the leak is</h1></div>
+  </div>
+  <div id="progBody"></div>
+</section>
+
+<!-- ============ LIBRARY ============ -->
+<section class="view" id="v-library">
+  <div class="row" style="margin-bottom:6px">
+    <div style="flex:1"><p class="eyebrow">Reference</p><h1 style="font-size:32px">The book</h1></div>
+  </div>
+  <p class="lede" style="margin-bottom:18px">Fifty triggers, the bad instinct each one provokes, and the disciplined line that beats it.</p>
+  <div class="panel pad" style="margin-bottom:18px">
+    <h2 style="margin-bottom:10px">Default phrases worth making automatic</h2>
+    <div class="qbank" id="phraseBank"></div>
+  </div>
+  <div class="panel pad" style="margin-bottom:18px">
+    <h2 style="margin-bottom:10px">Question bank</h2>
+    <div class="qbank" id="qBank"></div>
+  </div>
+  <div class="row" style="margin-bottom:10px"><h2 style="flex:1">Scenario library</h2>
+    <input type="text" id="libSearch" placeholder="Filter scenarios…" style="max-width:240px">
+  </div>
+  <div class="libgrid" id="libGrid"></div>
+</section>
+
+</main>
+
+<script>
+"use strict";
+/* ============================================================
+   DATA
+   ============================================================ */
+const SETTINGS=["Business association breakfast","Charity gala","Golf outing","Country club lunch","Chamber of commerce mixer","Wedding reception dinner","Private equity / founder event","Client referral introduction","Coffee line at a conference","Board meeting reception","Real estate industry dinner","CPA-hosted client dinner"];
+const PROSPECTS=["Business owner","Founder","Retired executive","Surgeon","Attorney","Real estate developer","Corporate executive","Family office heir","Recently divorced","Widow / widower","Post-liquidity-event","Holder of concentrated stock","Unhappy with current advisor","Sitting on excess cash","Considering selling the business","Frustrated about taxes","Uncertain about retirement","Skeptical of advisors","Already has an advisor","Wants better returns"];
+
+const DRILLS=[
+ {id:"none",name:"None — open conversation",rule:""},
+ {id:"noadvice",name:"No Advice — questions only",rule:"You may not give advice, recommendations, or product mentions. Questions, category labels, and the bridge only."},
+ {id:"three",name:"Three Questions Before Insight",rule:"Ask at least three questions before offering any interpretation or reframe."},
+ {id:"reframe",name:"One-Sentence Reframe",rule:"You must land the deeper issue in a single sentence before bridging."},
+ {id:"exit90",name:"Exit Before Over-Talking (90s)",rule:"Bridge to a second conversation within 90 seconds. Every second past that costs you."},
+ {id:"advisor",name:"Already Have an Advisor",rule:"The prospect opens with an existing advisor. Do not attack them. Find the gap."}
+];
+
+const SCEN=[
+["Business owner sitting on cash","Business association breakfast","Business owner","I've got a successful business and I'm sitting on a lot of cash. I'm not sure what to do with it.","Have you thought about a 401(k)?","Is the cash mostly sitting inside the business, personally, or both?","What made this feel like something you need to address now?","This may not be an investment question yet. It may be a liquidity and structure question.","That probably deserves a separate conversation. We should compare notes next week.","No succession plan and a large tax bill coming; he has never separated operating capital from personal wealth."],
+["Wants to diversify","Chamber of commerce mixer","Corporate executive","I'm probably too concentrated in stocks.","We can build you a diversified portfolio.","When you say concentrated, do you mean one stock, the market generally, or your own company?","Is your concern downside risk, taxes, or wanting a cleaner plan?","Diversification is easy to say, but the right version depends on what risk you're actually trying to reduce.","That's worth unpacking with the full picture. We should have a separate conversation.","Most of it is employer stock he cannot sell without a big tax hit; he is really afraid of one bad quarter."],
+["Already has an advisor","Country club lunch","Already has an advisor","I already have a financial advisor.","What kind of returns are they getting you?","Makes sense. Most successful people do. Is that relationship mostly investment management, or are they coordinating the bigger picture too?","Are they working directly with your CPA and attorney?","A lot of people have an advisor, but not always a coordinated planning process.","It may be worth comparing how you're set up. No pressure — just a second set of eyes.","The advisor is a friend from church; he manages the portfolio only and nobody has touched estate or tax in six years."],
+["Selling the business","Private equity / founder event","Considering selling the business","I may sell my company in the next couple of years.","You'll need to invest the proceeds.","Are you already planning around the sale, or is it still more of a possibility?","Have you looked at what needs to happen before the transaction, not just after?","With business sales, the decisions before the sale can be more valuable than the decisions after.","That's not a casual-conversation topic. We should compare notes before things get further along.","A banker is already circling. Nothing has been done on pre-sale tax structuring and his wife does not know how close it is."],
+["Tax frustration","CPA-hosted client dinner","Frustrated about taxes","Taxes are killing me.","We can help with tax-efficient investing.","Is that mostly from business income, investment income, real estate, or something else?","Do you feel like your tax planning is proactive, or are you mostly finding out after the fact?","The issue may not be the tax bill itself. It may be that the planning is happening too late.","That's worth looking at with your broader picture. We should set up a time to compare notes.","His CPA is a compliance-only preparer; nobody has ever run a projection before December."],
+["Wants better returns","Golf outing","Wants better returns","I feel like my money should be doing better.","We have strong portfolio models.","When you say better, do you mean higher returns, less volatility, more income, or more confidence in the plan?","What are you comparing the performance against?","Sometimes 'better returns' is really a performance issue. Sometimes it's a clarity issue.","That's probably worth reviewing properly, not guessing over golf.","He is comparing a balanced account to the S&P and nobody has ever explained his own required rate of return."],
+["Cash after a liquidity event","Charity gala","Post-liquidity-event","We recently sold part of the business, so now we have more cash than usual.","You should put that to work.","Was that cash created personally, inside another entity, or across both?","Have you already decided what portion is for lifestyle, security, taxes, investing, and legacy?","After a liquidity event, the danger is treating all the money like it has the same job.","That is exactly the kind of thing to map out before making moves. We should talk separately.","A large estimated tax payment is due and they are quietly arguing about how much to give the kids."],
+["Retirement uncertainty","Business association breakfast","Uncertain about retirement","I'm not sure when I can retire.","We can run a retirement plan for you.","Is the uncertainty around income, selling the business, lifestyle, or just not knowing your number?","Is your retirement mostly dependent on portfolio assets or the value of the business?","For business owners, retirement is often less about age and more about converting business value into personal financial independence.","That's worth modeling properly. We should compare notes.","Ninety percent of his net worth is the company and he has never had it valued."],
+["No retirement plan at the company","Business association breakfast","Business owner","We've never set up a retirement plan at the company.","You should do a 401(k).","What made you start thinking about it now — taxes, employee retention, or your own retirement planning?","How many employees do you have, and are you trying to maximize contributions for yourself or create a broader benefit?","The right plan depends on whether the goal is owner tax efficiency, employee benefits, or long-term retirement structure.","That's worth a focused conversation. There are a few ways to structure it.","He is losing two key employees to a competitor with better benefits and is embarrassed about it."],
+["Too much money in checking","Chamber of commerce mixer","Sitting on excess cash","Honestly, I just keep too much money in checking.","We can get you a better yield.","Is that because you need access to it, or because no one has helped you decide what amount is actually excess?","How much cash do you feel you need to sleep well?","The issue may not be yield. It may be not having a cash policy.","That's simple to organize, but it needs context. We should compare notes.","He was nearly wiped out in 2009 and has quietly hoarded cash ever since."],
+["Concentrated company stock","Board meeting reception","Holder of concentrated stock","Most of my net worth is tied up in company stock.","You should diversify.","Is the challenge emotional, tax-related, or are you restricted on when you can sell?","Do you already have a plan for reducing exposure over time?","The hard part is usually not knowing that concentration is risky. It's a plan that respects taxes, timing, and psychology.","That deserves real planning. We should talk separately.","He is in a blackout window most of the year and has never used a 10b5-1 plan."],
+["Inherited wealth","Board meeting reception","Family office heir","I inherited some money and I'm not sure I'm handling it correctly.","We can manage it for you.","Is your concern more about investing it, preserving it, taxes, or making decisions confidently?","Was there already a team in place, or are you having to build one?","Inherited wealth often creates a decision-making problem before it creates an investment problem.","That's worth talking through carefully. We should compare notes sometime next week.","Three siblings share a trust with no clear decision-maker and the trustee is a retired family friend."],
+["Divorce transition","Wedding reception dinner","Recently divorced","I'm going through a divorce, so I'm having to figure out money differently.","You'll need a new plan.","Is the financial picture already settled, or are decisions still being negotiated?","Do you feel like you have a clear view of income, assets, taxes, and what life looks like after?","In that situation, clarity and sequencing matter more than rushing into decisions.","That is probably worth a private conversation when the timing is right.","She is about to receive a retirement account split and does not know the tax treatment."],
+["Spouse handled the finances","Charity gala","Widow / widower","My spouse used to handle most of the finances.","We can help you take over.","Are you trying to understand what you have, or are there specific decisions coming up?","Do you have someone helping you sort through the moving pieces?","The first step is usually organization and confidence, not making big financial moves.","That is something I'd handle carefully. We should talk in a quieter setting.","There are seven accounts across four institutions and an old annuity nobody has explained."],
+["Real-estate-heavy net worth","Real estate industry dinner","Real estate developer","Most of my money is in real estate.","You should diversify into the market.","Is that by design, or has it just grown that way over time?","Are you more concerned about income, taxes, liquidity, or concentration?","Real estate wealth can look strong on paper but still create liquidity and concentration issues.","That's worth mapping out. We should compare notes.","Two loans reprice next year and his personal guarantees are larger than his liquid net worth."],
+["Wants passive income","Golf outing","Business owner","I'd like more passive income eventually.","We can build an income portfolio.","Is that to replace business income, reduce workload, or create retirement flexibility?","How much of your current lifestyle depends on active business income?","Passive income is really a freedom question, not just an investment question.","That's worth designing intentionally. We should have a real conversation.","He is burned out and wants to stop working within three years but has told nobody."],
+["Business succession","Private equity / founder event","Business owner","My kids may or may not take over the business.","You need succession planning.","Are they involved now, or is that still uncertain?","Is your concern more about fairness, control, taxes, or keeping the business healthy?","Succession is rarely just a legal issue. It usually touches family, liquidity, taxes, and identity.","That is definitely not small-talk territory. We should compare notes privately.","One child works in the business and two do not; he has no idea how to be fair without wrecking the company."],
+["No estate plan","Charity gala","Retired executive","I know I need to update my estate plan.","You should talk to an attorney.","What made that come up — family changes, asset growth, business issues, or just time?","Is the estate plan outdated, or is the broader wealth structure outdated?","Estate documents are one piece. The bigger question is whether everything is coordinated.","That's worth reviewing with the full picture. We should talk separately.","The trust was drafted in 1998, names a deceased trustee, and nothing has been retitled into it."],
+["Insurance uncertainty","Business association breakfast","Business owner","I'm not sure if I have the right insurance.","We can review your policies.","Are you thinking about personal protection, business continuity, estate liquidity, or something else?","Was the coverage designed around a plan, or accumulated over time?","Insurance is often messy because people buy policies at different life stages without a coordinated strategy.","That's worth cleaning up. We should compare notes.","He owns four policies from three different agents, one of which is about to lapse."],
+["Business partner risk","Private equity / founder event","Founder","My business partner and I have never really planned for what happens if one of us exits.","You need a buy-sell agreement.","Is the concern death, disability, retirement, conflict, or one person wanting out?","Is there already an agreement in place, or is it informal?","The financial risk is usually not the event itself. It's discovering too late that the plan was never funded or updated.","That's worth a focused conversation. We should talk.","There is an unfunded agreement from 2011 valuing the company at a fifth of what it is worth now."],
+["Skeptical of advisors","Wedding reception dinner","Skeptical of advisors","To be honest, I don't really trust financial advisors.","We're different.","Fair. Is that from a bad experience, or more from how the industry generally feels to you?","What happened that made you skeptical?","A lot of skepticism comes from people being sold products before anyone understands the actual problem.","I'm not going to pitch you over dinner. But it may be useful to compare how I think about it.","He was sold a variable annuity inside an IRA by a family friend and lost money and the friendship."],
+["Market anxiety","Business association breakfast","Retired executive","The market makes me nervous right now.","We can make your portfolio more conservative.","Is the nervousness because of your portfolio, your age, your business, or just the headlines?","Do you know how much risk you actually need to take to meet your goals?","Market anxiety is often a sign the strategy has not been connected clearly enough to the plan.","That's worth pressure-testing. We should compare notes.","He is two years into retirement, drawing 6% a year, and nobody has told him that is unsustainable."],
+["Helping the children","Country club lunch","Family office heir","We want to help our kids financially, but we don't want to ruin them.","You could set up trusts.","Is the bigger concern tax efficiency, fairness, control, or behavior?","Are you thinking about helping them now, later, or after you're gone?","Family wealth transfer is usually more about values and control than just moving money.","That's worth a thoughtful conversation. We should compare notes.","One child has been quietly supported for years and the other two do not know."],
+["Charitable giving","Charity gala","Retired executive","We've been giving more to charity lately.","Have you considered a donor-advised fund?","Are you giving reactively as things come up, or do you have a charitable strategy?","Is the goal impact, tax efficiency, family involvement, or legacy?","Charitable giving gets more powerful when it's coordinated with the rest of the wealth plan.","That's worth talking through outside of tonight.","They are giving cash out of a checking account while sitting on highly appreciated stock."],
+["Business growing fast","Private equity / founder event","Founder","The business has grown a lot faster than expected.","You should start investing more personally.","Has your personal planning kept up with the business growth?","Are you still treating the business as the main plan, or have you started building wealth outside of it?","Fast growth can create hidden concentration risk if everything stays tied to the company.","That's exactly the kind of thing to map before it gets more complex.","Revenue tripled in two years and he still has no personal savings outside the company."],
+["Has multiple advisors","Board meeting reception","Corporate executive","I have a CPA, an attorney, an insurance guy, and an investment person.","We can coordinate them.","Do they actually coordinate, or do you end up being the one connecting the dots?","Who owns the overall strategy?","Having specialists is good. The gap is often that no one is quarterbacking the full picture.","That's worth reviewing. We should compare notes.","Each one has given contradictory advice on the same entity and he has quietly stopped asking."],
+["Big compensation year","Board meeting reception","Corporate executive","I have a big compensation year coming up.","You should invest the bonus.","Is the issue taxes, timing, concentration, or deciding how much to save versus spend?","Is this a one-time event or part of a larger compensation pattern?","Big income years can be planning opportunities, but only if you make decisions before the year closes.","That's worth looking at soon. We should talk separately.","A deferred comp election deadline is six weeks away and he does not know it exists."],
+["Restricted stock units","Coffee line at a conference","Corporate executive","A lot of my compensation is in RSUs.","You should diversify when they vest.","Are you holding them intentionally, or just because they vest and accumulate?","Do you have a rule for selling, or is it more ad hoc?","RSUs can quietly become a concentration problem if there is no disciplined sell strategy.","That's worth creating a framework for. We should compare notes.","Four years of vested shares are sitting untouched and withholding has been under-collected every year."],
+["No personal liquidity","Business association breakfast","Business owner","The business does well, but personally I don't keep that much liquid.","You need an emergency fund.","Is that because most of the cash stays in the business, or because you keep reinvesting?","If the business had a bad year, how much personal runway would you want?","The question is how much financial independence you want outside the company.","That's worth modeling. We should talk.","A key customer is 40% of revenue and is renegotiating the contract next quarter."],
+["Exit with no next chapter","Private equity / founder event","Founder","I could probably sell, but I don't know what I'd do next.","You should prepare for the sale.","Is the hesitation financial, emotional, or strategic?","Do you know your number — the amount that would make work optional?","Sometimes the sale decision is not just about valuation. It's about whether the next chapter is clear.","That's worth thinking through with numbers attached. We should compare notes.","He has an offer in hand and has been sitting on it for five months without telling anyone."],
+["So what do you do?","Coffee line at a conference","Business owner","So what do you do?","I'm a wealth advisor. We manage assets for individuals and businesses.","I help business owners and families make better decisions around liquidity, taxes, retirement, and wealth outside the business. What about you — what kind of business are you in?","What does the ownership structure look like?","You are not an investment guy. You are a decision-making partner for complex wealth.","Only bridge if they reveal a trigger.","He is testing you. He will only reveal anything if your answer sounds like a peer, not a pitch."],
+["What kind of clients?","Chamber of commerce mixer","Attorney","What kind of clients do you usually work with?","Anyone who needs financial planning.","Mostly business owners, executives, and families where the complexity has outgrown basic investment management.","Usually there are business, tax, estate, and liquidity pieces that need coordinating. Does that sound like your world?","Your clients don't just need returns. They need coordination.","If they relate: that sounds similar to what you're dealing with. We should compare notes.","He is a referral source in disguise — he has twelve clients who need exactly this."],
+["I should probably talk to you","Charity gala","Business owner","I should probably talk to you sometime.","Absolutely, here's my card.","Maybe. What makes you say that?","What's the thing that feels least organized right now?","Do not accept vague interest. Qualify it.","Sounds like there's enough there for a real conversation. Let's find time next week.","He says this to every advisor he meets and never follows up. Only a specific admission changes that."],
+["Asks for quick advice","Business association breakfast","Business owner","What would you do if you were me?","Giving the advice.","I'd be careful answering that without context.","The answer depends on taxes, liquidity, time horizon, and what the money is for. Which of those is the biggest issue?","Ideas are easy. The right answer depends on the full picture.","I wouldn't want to give you a casual answer to a serious question. We should talk separately.","He is testing whether you will perform for him. Advisors who answer immediately get dismissed."],
+["Advisor is passive","Golf outing","Unhappy with current advisor","My advisor is fine, but I don't hear from him much.","We're very proactive.","When you say you don't hear from him, do you mean communication, planning ideas, or coordination with the rest of your team?","What would you want him to be more proactive about?","The issue may not be performance. It may be lack of leadership.","That's worth comparing. We should talk.","Two years with no review meeting and a rollover from a prior employer still sitting in cash."],
+["Spouse handles the money","Wedding reception dinner","Corporate executive","My spouse handles most of that.","I'd be happy to meet with both of you.","Makes sense. Are you both aligned on the bigger decisions, or do they mostly drive it?","Is there anything financially you wish you understood better?","Sometimes the issue is not who handles it, but whether both people have clarity.","If it ever makes sense, that's a good conversation to have together.","He is uneasy that he could not describe their plan if something happened to her."],
+["Five years from retirement","Board meeting reception","Corporate executive","I'm probably five years from retirement.","We can help you plan for retirement.","Is the biggest question when to retire, whether you can maintain lifestyle, or how to handle the transition?","Have you already mapped income, taxes, healthcare, and portfolio withdrawals?","The five years before retirement are often when the biggest planning decisions get made.","That's worth pressure-testing before you're right on top of it.","He plans to retire at 62 and has not priced the healthcare gap before Medicare."],
+["Multiple entities","Private equity / founder event","Real estate developer","I have a couple of operating companies and some real estate.","You need comprehensive planning.","Do you have one coordinated strategy across everything, or does each piece get handled separately?","Where does the complexity show up most — taxes, cash flow, entities, succession, or personal liquidity?","The risk with multiple entities is that everyone sees one piece, but no one sees the whole board.","That's worth mapping. We should compare notes.","Nine entities, three CPAs, and no consolidated balance sheet anywhere."],
+["Young children","Wedding reception dinner","Surgeon","Now that we have kids, I know we need to get more serious financially.","You need college planning and insurance.","What changed most for you — protection, education, estate planning, or just wanting more structure?","Have you updated anything since having kids?","Kids usually change the planning priorities before they change the investment strategy.","That's worth organizing. We should talk.","No will, no guardian named, and group disability that covers a third of his income."],
+["Aging parents","Charity gala","Attorney","I'm dealing with aging parents and their finances are a mess.","We can help with elder planning.","Are you trying to make decisions for them, understand what they have, or protect yourself from getting pulled into chaos?","Do they have documents, advisors, and a clear plan, or is everything scattered?","The issue may be less about investments and more about decision authority and organization.","That's worth discussing before there's a crisis.","No power of attorney is in place and his father has started missing bill payments."],
+["Wants simplicity","Business association breakfast","Retired executive","I just want things simpler.","We offer comprehensive planning.","What feels too complicated right now — accounts, advisors, taxes, entities, or decision-making?","Is the complexity costing you time, money, or just peace of mind?","Simplicity is usually the result of good structure, not fewer accounts.","That's worth cleaning up. We should compare notes.","Eleven accounts across five custodians, three of them old employer plans he forgot about."],
+["What's the market going to do?","Charity gala","Retired executive","What do you think the market is going to do?","Giving a market forecast.","Hard to make that useful without knowing what the money is supposed to do.","Are you asking because you're thinking of investing cash, changing risk, or just curious?","The market question only matters in relation to your plan.","If this is connected to real money decisions, we should talk with context.","He has $2M sitting in cash waiting for a correction that he has been waiting for since 2022."],
+["Property sale proceeds","Real estate industry dinner","Real estate developer","I sold a property and now I'm sitting on the proceeds.","You should invest the proceeds.","Was this a taxable sale, or did you use any planning around it?","Is the money meant to replace income, buy another property, or diversify outside real estate?","The key is deciding whether those proceeds are replacement capital, income capital, or long-term wealth capital.","That's worth sorting before you make a move.","The 1031 exchange window closes in 19 days and he has no identified replacement property."],
+["Too busy to deal with it","Chamber of commerce mixer","Business owner","I know I need to deal with this stuff, but I'm too busy.","We make it easy.","Is it truly a time issue, or has no one made the decisions clear enough?","What's the one financial decision you keep postponing?","Busy people usually do not need more information. They need better sequencing.","That's exactly the kind of thing a short focused conversation can clean up.","He has had an unsigned trust document on his desk for fourteen months."],
+["Does it himself","Golf outing","Retired executive","I manage most of my own investments.","That can be risky.","Do you enjoy it, or do you feel like you have to stay on top of it?","Is the bigger challenge investment selection, taxes, time, or coordinating everything else?","At a certain level the issue is not whether you can manage investments. It's whether that's still the highest use of your attention.","That may be worth comparing objectively.","He enjoys it, but his wife could not manage any of it and they both know it."],
+["Got burned before","Wedding reception dinner","Skeptical of advisors","I got burned years ago, so I keep things conservative.","We can build a safer portfolio.","Was it the loss itself, or feeling like you didn't understand the risk going in?","Has that experience changed how you make decisions now?","Sometimes old investment pain creates a strategy that is too defensive for the current situation.","That's worth reviewing carefully, without rushing into anything.","He has been 80% in CDs for fifteen years and is quietly aware he has lost ground to inflation."],
+["Intentional philanthropy","Charity gala","Family office heir","We're trying to be more intentional with giving.","You should use charitable vehicles.","Is the goal impact, family involvement, tax planning, or legacy?","Are you giving from income, appreciated assets, or a larger pool of wealth?","Intentional giving is most powerful when it connects values, tax strategy, and family governance.","That deserves a more thoughtful conversation than this setting.","The family wants a foundation but nobody has agreed on who decides what it funds."],
+["Business debt","Private equity / founder event","Founder","We've used debt to grow, but I'm not sure if we're overextended.","You should reduce debt.","Is the concern cash flow, interest rates, personal guarantees, or business risk?","How much of that debt connects back to your personal balance sheet?","For business owners, debt is not just a company issue if personal guarantees or personal liquidity are involved.","That's worth looking at with both the business and personal picture.","He personally guaranteed a line of credit larger than everything he owns outside the company."],
+["Protecting what he built","Country club lunch","Retired executive","At this point, I'm more concerned with protecting what I've built.","We can make the portfolio more conservative.","Protecting from what — market risk, taxes, lawsuits, family issues, business risk, or lifestyle creep?","Where do you feel most exposed?","Protection means different things depending on the threat. The first step is defining the risk.","That's worth mapping carefully. We should compare notes.","He is a physician with rental properties held in his own name and no umbrella coverage."],
+["Vague interest","Client referral introduction","Business owner","Yeah, I should probably get more organized financially.","We can help with that.","What feels disorganized — investments, taxes, estate planning, business planning, or just not having one clear person coordinating it?","What would you want to feel clearer about six months from now?","Getting organized usually starts with deciding who owns the overall strategy.","That sounds like enough to justify a real conversation. We should compare notes next week.","He was referred by his attorney who told him to call you three months ago and he never did."]
+].map(function(a,i){return{id:i+1,title:a[0],setting:a[1],who:a[2],line:a[3],bad:a[4],strong:a[5],follow:a[6],reframe:a[7],bridge:a[8],hidden:a[9]};});
+
+const BANNED=[
+ [/\bI'?d love to\b/i,"I'd love to…"],
+ [/\bI'?d be happy to\b/i,"I'd be happy to…"],
+ [/\blet me tell you (about )?what we do\b/i,"Let me tell you what we do"],
+ [/\byou should (consider|think about|look at|do|get|buy|start|put|move)\b/i,"You should…"],
+ [/\byou (really )?need (a|an|to|some)\b/i,"You need…"],
+ [/\bI(’|')?d recommend\b|\bI would recommend\b|\bmy recommendation\b/i,"I'd recommend…"],
+ [/\bhave you (thought about|considered) (buying|getting|opening|a )\b/i,"Have you considered buying…"],
+ [/\bcan I send you\b|\bsend you (some )?(information|materials|a brochure)\b/i,"Can I send you information"],
+ [/\bdo you (need|have) a financial advisor\b/i,"Do you need an advisor"],
+ [/\bwe (have|offer) (great|good|strong|excellent)\b/i,"We have great…"],
+ [/\bbetter returns\b(?=[^?]*$)/i,"Promising better returns"],
+ [/\bcan I pick your brain\b/i,"Pick your brain"],
+ [/\bhere'?s my card\b|\bgive you my card\b/i,"Here's my card"],
+ [/\bwe manage (over |about |roughly )?\$/i,"AUM drop"],
+ [/\bthe best thing (is|would be|to do)\b/i,"The best thing is…"],
+ [/\bwhat you (want|need) to do is\b/i,"What you need to do is…"],
+ [/\b401\s?\(?k\)?\b|\bannuit(y|ies)\b|\bdonor[- ]advised\b|\bmunicipal bonds?\b|\bindex funds?\b|\bETFs?\b/i,"Product named early"]
+];
+const BRIDGE=[
+ /compare notes/i,/separate conversation/i,/real conversation/i,/talk properly/i,
+ /(wouldn'?t|not something I'?d|rather not) (want to |try to )?(solve|answer|unpack|get into)/i,
+ /find (20|twenty|30|thirty) minutes/i,/not (a )?(breakfast|dinner|cocktail)[- ]table/i,
+ /deserves? (a )?(separate|its own|real)/i,/set (up )?(a )?time/i,/pressure[- ]test/i,
+ /when we'?re not in the middle of/i,/grab (a )?coffee/i,/next week/i
+];
+const PHRASES=[
+ ["To slow yourself down","Before I'd even think about solutions, I'd want to understand what's driving that."],
+ ["When they ask for advice too early","I'd be careful giving you an answer without context."],
+ ["When they say something vague","When you say that, what do you mean specifically?"],
+ ["When they mention cash","Is that business cash, personal cash, or both?"],
+ ["When they mention diversification","What risk are you actually trying to diversify away from?"],
+ ["When they mention taxes","Are you planning proactively, or mostly reacting once the year is over?"],
+ ["When they already have an advisor","Is that relationship mainly portfolio management, or are they coordinating the bigger picture?"],
+ ["To move to a second conversation","That's probably worth a separate conversation. I wouldn't try to solve it here."],
+ ["To sound peer-level","There may be a few moving pieces there."],
+ ["To avoid sounding salesy","It may or may not be something I can help with, but it's worth comparing notes."],
+ ["The line that works almost everywhere","The real question may not be what to invest in. It may be what role that money is supposed to play."]
+];
+const QBANK=[
+ ["Opening diagnostic",["What made that come up now?","Is this something you've been thinking about for a while, or did something trigger it recently?","Is this more of a business issue or a personal wealth issue?","Is the money sitting inside the company, personally, or both?","Are you trying to solve for taxes, risk, income, liquidity, or simplicity?","What would make this feel handled?","What happens if you do nothing for another year?","Who else is involved in the decision?","Do you already have someone coordinating the moving pieces?","Is your current strategy written down, or mostly informal?"]],
+ ["Business owner",["How much cash does the business actually need to operate comfortably?","Do you know what amount is truly excess?","How dependent is your personal net worth on the business?","Are you trying to eventually extract value, sell it, or keep growing it?","Have you separated operating capital from long-term wealth capital?","Is your retirement plan tied mostly to the business value?","If something happened to the business, how exposed would your personal plan be?"]],
+ ["High-net-worth",["Is your complexity mostly coming from investments, taxes, entities, family, or lack of coordination?","Do you feel like everything is coordinated, or do you have separate people giving separate advice?","What part of the picture feels least organized?","Are you optimizing for growth, preservation, income, legacy, or control?","Where do you feel most exposed right now?"]],
+ ["Advisor relationship",["Do you feel like your advisor is proactive or mostly reactive?","Are they coordinating with your CPA and attorney?","Is the relationship mainly portfolio management, or broader planning?","When was the last time someone pressure-tested the whole picture?","What do you wish they were doing that they are not doing?"]],
+ ["Second-conversation bridge",["Would it be useful to compare notes when we're not in the middle of an event?","That sounds like it has a few moving pieces. We should probably unpack it separately.","I would not want to give you a surface-level answer here. Let's set up a real conversation.","That's exactly the kind of situation where 20 minutes of context changes the answer.","I can already tell there are a few important variables. Not breakfast-table advice."]]
+];
+const CATS=[
+ ["premature","Premature Advice Control","Did you avoid solving too early?"],
+ ["questions","Question Quality","Did your questions reveal the real issue?"],
+ ["frame","Frame Control","Peer, or vendor?"],
+ ["depth","Diagnostic Depth","Did you find the issue underneath the statement?"],
+ ["brevity","Brevity","One clean question beats a mini-seminar."],
+ ["curiosity","Curiosity Creation","Did you give them a reason to want more?"],
+ ["bridge","Second Meeting Bridge","Did you ask without sounding needy?"]
+];
+const CATCOLOR={premature:"#8C2F3B",questions:"#2E6B52",frame:"#9C6C15",depth:"#3D6A9E",depth2:"",brevity:"#7A5AA8",curiosity:"#B5622C",bridge:"#2A7E86"};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const $=function(s){return document.querySelector(s)};
+const $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+const esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+const clamp=function(n,a,b){return Math.max(a,Math.min(b,n))};
+
+let SAMPLE=null, DB=null, RUNS=[], view="deck";
+let R=null;              // live run
+let lastConfig=null;
+
+const LEVELS={
+  easy:{k:"easy",label:"Warm",interest:34,env:.08,desc:"Friendly, forthcoming, will meet if you ask cleanly."},
+  medium:{k:"medium",label:"Normal",interest:22,env:.16,desc:"Polite but guarded. Vague until you narrow."},
+  hard:{k:"hard",label:"Guarded",interest:14,env:.26,desc:"Busy, been pitched before, deflects once minimum."},
+  brutal:{k:"brutal",label:"Brutal",interest:8,env:.36,desc:"Skeptical, distracted, will test you and try to leave."}
+};
+const ENV_EVENTS=["Someone walks up and claps them on the shoulder mid-sentence.","The host taps the microphone — the program is about to start.","Their phone buzzes on the table and they glance down at it.","A server leans in to clear the plates.","Someone across the room waves them over.","They check their watch.","A loud burst of laughter from the next table cuts you off.","Their playing partner calls out that they're up."];
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+const LS="sct.runs.v1";
+function loadLocal(){try{return JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){return[]}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(RUNS.slice(0,300)))}catch(e){}}
+let SERVER=false;
+async function saveRun(run){
+  RUNS.unshift(run); saveLocal();
+  if(DB){try{await DB.collection("runs").doc(run.id).set(run)}catch(e){}}
+  if(SERVER){try{await fetch("/api/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({run:run})})}catch(e){}}
+}
+function mergeRuns(remote){
+  const seen={}, merged=[];
+  remote.concat(RUNS).forEach(function(r){ if(r&&r.id&&!seen[r.id]){seen[r.id]=1;merged.push(r)} });
+  merged.sort(function(a,b){return (b.ts||0)-(a.ts||0)});
+  RUNS=merged; saveLocal();
+}
+async function loadRuns(){
+  RUNS=loadLocal();
+  if(SERVER){
+    try{
+      const r=await fetch("/api/runs");
+      if(r.ok){ const j=await r.json(); mergeRuns((j.runs||[]).filter(Boolean)) }
+    }catch(e){}
+  } else {
+    try{
+      DB=await claude.use("db");
+      if(DB){
+        const snap=await DB.collection("runs").orderBy("ts","desc").limit(200).get();
+        mergeRuns(snap.docs.map(function(d){return d.data()}).filter(Boolean));
+      }
+    }catch(e){}
+  }
+  renderRecent(); renderProgress(); applyAdaptive();
+}
+
+/* ============================================================
+   ADAPTIVE DIFFICULTY
+   ============================================================ */
+function adaptiveLevel(){
+  const done=RUNS.filter(function(r){return r.total}).slice(0,5);
+  if(!done.length) return LEVELS.medium;
+  const avg=done.reduce(function(a,r){return a+r.total},0)/done.length;
+  if(avg<36) return LEVELS.easy;
+  if(avg<50) return LEVELS.medium;
+  if(avg<60) return LEVELS.hard;
+  return LEVELS.brutal;
+}
+function applyAdaptive(){
+  const L=adaptiveLevel();
+  $("#lvlTag").textContent="Adaptive · "+L.label;
+  $("#deckLvl").textContent="Now serving: "+L.label.toLowerCase()+" prospects";
+  $("#deckLvl").title=L.desc;
+}
+
+/* ============================================================
+   METRICS (client-side, real time)
+   ============================================================ */
+function words(s){return (String(s).trim().match(/\S+/g)||[]).length}
+function isQuestion(s){return /\?/.test(s)||/^(is|are|do|does|did|what|when|where|who|why|how|have|has|would|could|can|was|were|which)\b/i.test(s.trim())}
+function bannedHits(s){
+  const out=[];
+  BANNED.forEach(function(p){ const m=s.match(p[0]); if(m) out.push({label:p[1],quote:m[0]}); });
+  return out;
+}
+function hasBridge(s){ return BRIDGE.some(function(p){return p.test(s)}) }
+
+function recomputeMetrics(){
+  if(!R) return;
+  const a=R.turns.filter(function(t){return t.role==="advisor"});
+  const p=R.turns.filter(function(t){return t.role==="prospect"});
+  const aw=a.reduce(function(n,t){return n+words(t.text)},0);
+  const pw=p.reduce(function(n,t){return n+words(t.text)},0);
+  R.m.advisorWords=aw; R.m.prospectWords=pw;
+  R.m.talkShare=(aw+pw)?Math.round(aw/(aw+pw)*100):0;
+  R.m.questions=a.filter(function(t){return isQuestion(t.text)}).length;
+  R.m.avgTurnWords=a.length?Math.round(aw/a.length):0;
+  R.m.turns=a.length;
+  R.m.durationSec=Math.round((Date.now()-R.startedAt)/1000);
+}
+function paintSignals(){
+  if(!R) return;
+  recomputeMetrics();
+  const d=R.m.durationSec;
+  const t=$("#sigTime"); t.textContent=Math.floor(d/60)+":"+String(d%60).padStart(2,"0");
+  t.className="v"+(d>150?" bad":d>90?" warn":"");
+  const ts=$("#sigTalk"); ts.textContent=R.m.talkShare?R.m.talkShare+"%":"—";
+  ts.className="v"+(R.m.talkShare>55?" bad":R.m.talkShare>42?" warn":R.m.talkShare?" good":"");
+  $("#sigQ").textContent=R.m.questions;
+  const b=$("#sigBan"); b.textContent=R.m.hits.length; b.className="v"+(R.m.hits.length?" bad":"");
+  const br=$("#sigBridge");
+  br.textContent=R.m.bridgeAt==null?"—":Math.floor(R.m.bridgeAt/60)+":"+String(R.m.bridgeAt%60).padStart(2,"0");
+  br.className="v"+(R.m.bridgeAt==null?"":R.m.bridgeAt<=90?" good":" warn");
+  $("#interestBar").style.width=clamp(R.interest,3,100)+"%";
+  $("#interestBar").style.background=R.interest>62?"var(--good)":R.interest>32?"var(--accent)":"var(--ink-3)";
+  if(R.m.hits.length){
+    $("#hitBox").hidden=false;
+    $("#hitList").innerHTML=R.m.hits.slice(-8).map(function(h){return '<div class="hit">'+esc(h.label)+' &mdash; &ldquo;'+esc(h.quote)+'&rdquo;</div>'}).join("");
+  }
+}
+
+/* ============================================================
+   VOICE
+   ============================================================ */
+const Voice={
+  SR:window.SpeechRecognition||window.webkitSpeechRecognition,
+  rec:null, listening:false, want:false, blocked:false, buf:"", interim:"", timer:null,
+  voices:[], picked:null, speaking:false,
+  supported(){return !!this.SR && !!window.speechSynthesis},
+  init(){
+    if(!this.SR) return;
+    const r=new this.SR();
+    r.continuous=true; r.interimResults=true; r.lang="en-US"; r.maxAlternatives=1;
+    const self=this;
+    r.onresult=function(e){
+      let fin="",itr="";
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0].transcript;
+        if(e.results[i].isFinal) fin+=t+" "; else itr+=t;
+      }
+      if(fin) self.buf+=fin;
+      self.interim=itr;
+      paintHeard();
+      if(self.buf.trim()||itr.trim()) self.arm();
+    };
+    r.onerror=function(e){
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"){ self.blocked=true; self.want=false; micDenied(); }
+      else if(e.error==="no-speech"){ /* keep waiting */ }
+    };
+    r.onend=function(){
+      self.listening=false;
+      if(self.want && !self.blocked){ try{r.start(); self.listening=true;}catch(_){ } }
+      paintMic();
+    };
+    this.rec=r;
+    const load=function(){ self.voices=window.speechSynthesis.getVoices()||[] };
+    load(); if(window.speechSynthesis) window.speechSynthesis.onvoiceschanged=load;
+  },
+  pickVoice(seed){
+    const v=this.voices.filter(function(x){return /^en(-|_|$)/i.test(x.lang)});
+    if(!v.length){this.picked=null;return}
+    const good=v.filter(function(x){return /natural|premium|enhanced|samantha|daniel|karen|moira|alex|google/i.test(x.name)});
+    const pool=good.length?good:v;
+    this.picked=pool[Math.abs(seed)%pool.length];
+  },
+  arm(){ clearTimeout(this.timer); const self=this; this.timer=setTimeout(function(){ self.flush() },1500); },
+  flush(){
+    clearTimeout(this.timer);
+    const txt=(this.buf+" "+this.interim).replace(/\s+/g," ").trim();
+    this.buf=""; this.interim="";
+    if(txt.length>1) submitAdvisor(txt); else paintHeard();
+  },
+  start(){
+    if(!this.rec||this.blocked) return;
+    this.want=true; this.buf=""; this.interim="";
+    try{ this.rec.start(); this.listening=true; }catch(_){}
+    paintMic(); paintHeard();
+  },
+  stop(){ this.want=false; clearTimeout(this.timer); try{this.rec&&this.rec.abort()}catch(_){} this.listening=false; paintMic(); },
+  say(text,done){
+    const self=this;
+    if(!window.speechSynthesis||!$("#chkVoice").checked){ if(done)done(); return; }
+    try{ window.speechSynthesis.cancel(); }catch(_){}
+    const u=new SpeechSynthesisUtterance(text);
+    if(this.picked) u.voice=this.picked;
+    u.rate=1.03; u.pitch=1; u.volume=1;
+    u.onend=function(){ self.speaking=false; $("#btnCutIn").hidden=true; paintMic(); if(done)done() };
+    u.onerror=function(){ self.speaking=false; $("#btnCutIn").hidden=true; paintMic(); if(done)done() };
+    this.speaking=true; $("#btnCutIn").hidden=false; paintMic();
+    window.speechSynthesis.speak(u);
+  },
+  shutUp(){ try{window.speechSynthesis.cancel()}catch(_){} this.speaking=false; $("#btnCutIn").hidden=true; paintMic(); }
+};
+function paintMic(){
+  const m=$("#micBtn");
+  m.className="mic"+(Voice.listening&&Voice.want?" live":Voice.speaking?" speak":"");
+  m.setAttribute("aria-pressed",Voice.want?"true":"false");
+}
+function paintHeard(){
+  const h=$("#heard");
+  if(Voice.speaking){ h.innerHTML='<span class="hint">They’re talking. Tap <b>Cut in</b> to interrupt.</span>'; return }
+  const t=(Voice.buf+" "+Voice.interim).trim();
+  if(t) h.innerHTML=esc(Voice.buf)+'<span class="i">'+esc(Voice.interim)+'</span>';
+  else if(Voice.want) h.innerHTML='<span class="hint">Listening… pause for a beat when you’re done.</span>';
+  else if(Voice.blocked) h.innerHTML='<span class="hint">Mic unavailable — type your reply below.</span>';
+  else h.innerHTML='<span class="hint">Mic is off. Tap it, or type below.</span>';
+}
+function micDenied(){
+  $("#micBanner").innerHTML='<div class="banner"><span>&#9888;</span><div><b>Microphone blocked in this frame.</b>'
+    +'Open this page in its own browser tab (the artifact URL) and allow the mic — voice will work there. '
+    +'Until then everything still runs by typing.</div></div>';
+  paintMic(); paintHeard();
+}
+
+/* ============================================================
+   PROSPECT ENGINE
+   ============================================================ */
+function prospectBrief(){
+  const s=R.scen, L=R.level;
+  return [
+    "SCENE",
+    "Setting: "+R.setting,
+    "You are: a "+R.who.toLowerCase()+", high net worth, mid-40s to 60s. You are NOT looking for an advisor.",
+    "Your opening line was: \""+s.line+"\"",
+    "The real issue underneath, which you have NOT said out loud: "+s.hidden,
+    "Your posture: "+L.desc,
+    "",
+    "HOW YOU BEHAVE",
+    "- Speak like a real person at a real event: 1-3 sentences, contractions, occasional fragments. Never a paragraph.",
+    "- You are guarded about specifics. You give one layer at a time, and only in response to a genuinely good question.",
+    "- Reward precision. If the advisor asks a narrowing question (business vs personal, taxes vs liquidity vs risk vs structure, what triggered it now), open up a little and raise interest.",
+    "- Punish selling. If the advisor gives advice, names a product, pitches credentials, over-explains, or says anything that sounds like a salesperson, get cooler, shorter, and more distracted. Interest drops.",
+    "- Punish neediness. 'Can I call you sometime', 'I'd love to help', 'here's my card' make you deflect.",
+    "- Never volunteer the hidden issue. It surfaces only if they earn it with 2+ good questions, and even then only partially.",
+    "- Do not agree to a second meeting until interest is at least 65 AND they have asked for it in a peer-level, non-needy way. Below that, deflect: 'yeah, maybe', 'send me something', 'I'm pretty covered', or change the subject.",
+    "- You may ask the advisor a question back. You may test them: 'so what would you do?' Advisors who answer that immediately should lose interest points.",
+    "- Never coach, never break character, never mention scoring or that this is practice.",
+    "",
+    "SCORING STATE",
+    "interest: 0-100, how much you want to continue with this person. Currently "+R.interest+".",
+    "Move it by at most 15 per turn. A single product jump costs 10-20. A great narrowing question gains 8-15.",
+    "outcome: 'open' normally. 'accepted' only when you genuinely agree to a specific later conversation. 'deflected' when you brush off a meeting ask but keep talking. 'lost' when you disengage and end the conversation.",
+    "",
+    "OUTPUT — JSON only, no prose, no code fence:",
+    '{"say":"your spoken line","interest":0-100,"outcome":"open|accepted|deflected|lost","revealed":"short label of anything new you disclosed, or empty string","tell":"one short clause naming what the advisor just did that moved you, from your point of view"}'
+  ].join("\n");
+}
+function buildTurns(envNote){
+  const t=[{role:"user",content:prospectBrief()}];
+  R.turns.forEach(function(x){
+    if(x.role==="prospect") t.push({role:"assistant",content:x.text});
+    else if(x.role==="advisor") t.push({role:"user",content:"ADVISOR: "+x.text});
+  });
+  const last=t[t.length-1];
+  let tail="\n\n(Reply as JSON only.)";
+  if(envNote) tail="\n\nENVIRONMENT: "+envNote+" Work it into your reply naturally."+tail;
+  if(R.drill.id==="noadvice"&&R.m.hits.length) tail="\n\n(They just slipped into selling. React accordingly.)"+tail;
+  if(last&&last.role==="user") last.content+=tail;
+  else t.push({role:"user",content:"(Continue.)"+tail});
+  return t;
+}
+
+function addTurn(role,text,extra){
+  R.turns.push({role:role,text:text,t:Math.round((Date.now()-R.startedAt)/1000)});
+  const el=document.createElement("div");
+  el.className="turn "+(role==="prospect"?"p":role==="advisor"?"a":"env");
+  const who=role==="prospect"?R.who.split(" ")[0].toUpperCase():role==="advisor"?"YOU":"";
+  el.innerHTML='<div class="who">'+esc(who)+'</div><div><div class="txt">'+esc(text)+'</div>'+(extra||"")+'</div>';
+  $("#scroll").appendChild(el);
+  $("#scroll").scrollTop=$("#scroll").scrollHeight;
+  paintSignals();
+}
+function addThinking(){
+  const el=document.createElement("div");
+  el.className="turn p"; el.id="thinkRow";
+  el.innerHTML='<div class="who">'+esc(R.who.split(" ")[0].toUpperCase())+'</div><div class="txt"><span class="thinking"><i></i><i></i><i></i></span></div>';
+  $("#scroll").appendChild(el); $("#scroll").scrollTop=$("#scroll").scrollHeight;
+}
+function killThinking(){ const e=$("#thinkRow"); if(e) e.remove() }
+
+/* --- fallback prospect when sample is unavailable --- */
+function fallbackProspect(){
+  const s=R.scen, n=R.turns.filter(function(t){return t.role==="advisor"}).length;
+  const good=R.m.questions>=Math.min(n,2)&&!R.m.hits.length;
+  R.interest=clamp(R.interest+(good?14:-10),0,100);
+  let say, outcome="open";
+  if(R.m.bridgeAt!=null&&R.interest>=60){ say="Alright. Yeah, let's do that — call me next week."; outcome="accepted"; }
+  else if(R.m.hits.length&&n>=2){ say="Yeah… I've got someone who handles all that, honestly."; outcome=n>=4?"lost":"deflected"; }
+  else if(n===1) say="Well — some of it's in the company, some of it isn't. Why does that matter?";
+  else if(n===2) say="I mean, nobody's really asked me that. I guess it's been sitting there a while.";
+  else if(n===3) say="Yeah. That's fair. I hadn't thought about it that way.";
+  else { say="Look, I've got to grab someone before they leave. Was good talking to you."; outcome=R.interest>=60?"accepted":"lost"; }
+  return {say:say,interest:R.interest,outcome:outcome,revealed:"",tell:good?"asked instead of told":"jumped to a solution"};
+}
+
+async function prospectTurn(){
+  const envNote=(Math.random()<R.level.env&&R.turns.length>2)?ENV_EVENTS[Math.floor(Math.random()*ENV_EVENTS.length)]:null;
+  addThinking();
+  let out=null;
+  if(SAMPLE){
+    try{
+      out=await SAMPLE.json(buildTurns(envNote),{modelTier:"default",cache:false});
+    }catch(e){ out=null; }
+  }
+  killThinking();
+  if(!out||!out.say) out=fallbackProspect();
+  if(envNote) addTurn("env",envNote);
+  R.interest=clamp(Number(out.interest)||R.interest,0,100);
+  if(out.revealed) R.revealed.push(String(out.revealed));
+  $("#briefText").innerHTML=out.tell?'<b>Last read:</b> '+esc(out.tell):"";
+  addTurn("prospect",String(out.say));
+  const oc=String(out.outcome||"open");
+  R.outcome=oc;
+  if(oc==="accepted"||oc==="lost"){ setTimeout(function(){ Voice.say(String(out.say),function(){ endRun(oc) }) },10); return }
+  Voice.say(String(out.say),function(){ if(R&&R.live) Voice.start() });
+  if(!$("#chkVoice").checked||!Voice.supported()) { /* typing mode */ }
+}
+
+/* ============================================================
+   ADVISOR INPUT
+   ============================================================ */
+let busy=false;
+async function submitAdvisor(text){
+  if(!R||!R.live||busy) return;
+  text=String(text).trim(); if(!text) return;
+  busy=true; Voice.stop(); Voice.buf=""; Voice.interim=""; paintHeard();
+  const hits=bannedHits(text);
+  hits.forEach(function(h){ R.m.hits.push(h) });
+  const flagHtml=hits.length?'<div class="flags">'+hits.map(function(h){return '<span class="chip bad">'+esc(h.label)+'</span>'}).join("")+'</div>':"";
+  const q=isQuestion(text);
+  const bridged=hasBridge(text);
+  let chips=flagHtml;
+  if(!hits.length&&q) chips='<div class="flags"><span class="chip good">question</span></div>';
+  if(bridged&&R.m.bridgeAt==null){
+    R.m.bridgeAt=Math.round((Date.now()-R.startedAt)/1000);
+    chips='<div class="flags">'+(hits.length?hits.map(function(h){return '<span class="chip bad">'+esc(h.label)+'</span>'}).join(""):"")+'<span class="chip acc">bridge attempt</span></div>';
+  }
+  addTurn("advisor",text,chips);
+  checkDrill(text);
+  const nA=R.turns.filter(function(t){return t.role==="advisor"}).length;
+  if(nA>=14){ busy=false; endRun("timeout"); return }
+  await prospectTurn();
+  busy=false;
+}
+function checkDrill(text){
+  const d=R.drill; if(d.id==="none") return;
+  const nQ=R.m.questions, nA=R.m.turns;
+  let msg=null;
+  if(d.id==="noadvice"&&bannedHits(text).length) msg="Constraint broken — that was advice.";
+  if(d.id==="three"&&!isQuestion(text)&&nQ<3) msg="Constraint broken — only "+nQ+" question"+(nQ===1?"":"s")+" before interpreting.";
+  if(d.id==="exit90"&&R.m.bridgeAt!=null&&R.m.bridgeAt>90) msg="Constraint broken — bridged at "+R.m.bridgeAt+"s.";
+  if(msg){ R.drillBreaks.push(msg); $("#drillText").innerHTML=esc(d.rule)+'<br><span style="color:var(--bad)">'+esc(msg)+'</span>' }
+}
+
+/* ============================================================
+   RUN LIFECYCLE
+   ============================================================ */
+function newRun(cfg){
+  const scen=cfg.scen;
+  R={
+    id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    ts:Date.now(), live:true, startedAt:Date.now(),
+    setting:cfg.setting, who:cfg.who, scenarioId:scen.id, scenarioTitle:scen.title,
+    scen:scen, level:cfg.level, drill:cfg.drill,
+    turns:[], interest:cfg.level.interest, revealed:[], outcome:"open", drillBreaks:[],
+    m:{hits:[],questions:0,talkShare:0,advisorWords:0,prospectWords:0,bridgeAt:null,durationSec:0,turns:0,avgTurnWords:0}
+  };
+  lastConfig=cfg;
+  $("#liveSetting").textContent=cfg.setting+"  ·  "+cfg.level.label+(cfg.drill.id!=="none"?"  ·  drill":"");
+  $("#liveWho").textContent=cfg.who+" — "+scen.title;
+  $("#scroll").innerHTML=""; $("#micBanner").innerHTML=""; $("#hitBox").hidden=true;
+  $("#briefText").innerHTML='<b>Goal:</b> earn a second conversation. Not a sale. Not a solution.';
+  $("#drillBox").hidden=cfg.drill.id==="none";
+  $("#drillText").textContent=cfg.drill.rule;
+  Voice.pickVoice(scen.id*7+cfg.who.length);
+  go("live");
+  paintSignals();
+  clearInterval(R.tick); R.tick=setInterval(paintSignals,1000);
+  addTurn("prospect",scen.line);
+  Voice.say(scen.line,function(){ if(R&&R.live&&$("#chkVoice").checked) Voice.start() });
+  if(!$("#chkVoice").checked) $("#typed").focus();
+}
+async function endRun(reason){
+  if(!R||!R.live) return;
+  R.live=false; clearInterval(R.tick); Voice.stop(); Voice.shutUp();
+  recomputeMetrics();
+  R.result=reason==="accepted"?"Second conversation earned":reason==="lost"?"Lost the thread":reason==="timeout"?"Ran out of window":"Ended early";
+  R.won=reason==="accepted";
+  go("score");
+  $("#scoreBody").innerHTML='<div class="panel pad"><p class="eyebrow">Scoring</p><h2 style="margin-top:6px">Reading the tape…</h2>'
+    +'<p class="lede" style="margin-top:8px">Seven categories, then the rewrite.</p>'
+    +'<div style="margin-top:14px"><span class="thinking"><i></i><i></i><i></i></span></div></div>';
+  const sc=await scoreRun();
+  R.scores=sc.scores; R.total=sc.total; R.coach=sc.coach;
+  const saved={id:R.id,ts:R.ts,setting:R.setting,who:R.who,scenarioId:R.scenarioId,scenarioTitle:R.scenarioTitle,
+    level:R.level.k,drill:R.drill.id,drillBreaks:R.drillBreaks,won:R.won,result:R.result,outcome:R.outcome,
+    turns:R.turns.map(function(t){return{role:t.role,text:t.text,t:t.t}}),
+    m:{hits:R.m.hits,questions:R.m.questions,talkShare:R.m.talkShare,advisorWords:R.m.advisorWords,
+       prospectWords:R.m.prospectWords,bridgeAt:R.m.bridgeAt,durationSec:R.m.durationSec,turns:R.m.turns,avgTurnWords:R.m.avgTurnWords},
+    scores:R.scores,total:R.total,coach:R.coach};
+  await saveRun(saved);
+  renderScore(saved);
+  renderRecent(); renderProgress(); applyAdaptive();
+}
+
+function heuristicScores(){
+  const m=R.m;
+  const s={};
+  s.premature=clamp(10-m.hits.length*2.5,1,10);
+  s.questions=clamp(Math.round(m.questions/Math.max(1,m.turns)*10),1,10);
+  s.frame=clamp(9-m.hits.length*2,1,10);
+  s.depth=clamp(3+R.revealed.length*2+(R.interest>55?2:0),1,10);
+  s.brevity=clamp(m.avgTurnWords<=18?9:m.avgTurnWords<=30?7:m.avgTurnWords<=45?5:3,1,10);
+  s.curiosity=clamp(Math.round(R.interest/11),1,10);
+  s.bridge=m.bridgeAt==null?2:R.won?9:m.bridgeAt<=110?6:4;
+  Object.keys(s).forEach(function(k){s[k]=Math.round(s[k])});
+  return s;
+}
+async function scoreRun(){
+  const transcript=R.turns.filter(function(t){return t.role!=="env"})
+    .map(function(t){return (t.role==="advisor"?"ADVISOR":"PROSPECT")+" ["+t.t+"s]: "+t.text}).join("\n");
+  const fallback=function(){
+    const sc=heuristicScores();
+    return {scores:sc,total:Object.keys(sc).reduce(function(a,k){return a+sc[k]},0),
+      coach:{best:"—",worst:R.m.hits.length?"You used selling language: "+R.m.hits[0].label:"You let the conversation drift without narrowing.",
+      missed:"Is that more about taxes, risk, liquidity, or structure?",
+      rewriteBefore:"",rewriteAfter:"That's probably worth a separate conversation. I wouldn't try to solve it here.",
+      reframe:"This may not be an investment question yet. It may be a structure question.",
+      bridge:R.scen.bridge,drill:"Run the same scenario again and ask three questions before you interpret anything."}};
+  };
+  if(!SAMPLE) return fallback();
+  const prompt=[
+    "You are an elite, direct sales coach for high-net-worth financial advisors. You do not flatter. You make them sharper.",
+    "The advisor's known weakness: premature diagnosis and premature solutioning. They jump to products and advice before understanding context.",
+    "The goal of the conversation was NOT to close business. It was to earn a second conversation.",
+    "",
+    "SCENE: "+R.setting+" · prospect is a "+R.who+" · difficulty "+R.level.label,
+    "Hidden issue the prospect was concealing: "+R.scen.hidden,
+    R.drill.id!=="none"?("Constraint drill in force: "+R.drill.rule):"",
+    "Outcome: "+R.result,
+    "",
+    "TRANSCRIPT",
+    transcript,
+    "",
+    "MEASURED",
+    "duration "+R.m.durationSec+"s · advisor talk share "+R.m.talkShare+"% · "+R.m.questions+" questions across "+R.m.turns+" turns · avg "+R.m.avgTurnWords+" words per turn",
+    "flagged selling language: "+(R.m.hits.length?R.m.hits.map(function(h){return h.label}).join(", "):"none"),
+    "bridge attempted at: "+(R.m.bridgeAt==null?"never":R.m.bridgeAt+"s"),
+    "",
+    "Score 1-10 on each. 10 is elite, 5 is competent, 1 is a leak. Be strict: most advisors score 4-6.",
+    "1 premature — avoided solving too early. 2 questions — questions that revealed the real issue, not generic ones.",
+    "3 frame — peer, not vendor. 4 depth — found the issue beneath the surface statement.",
+    "5 brevity — one clean question rather than a mini-seminar. 6 curiosity — gave a reason to want more.",
+    "7 bridge — asked for a next step without neediness.",
+    "",
+    "Return JSON only:",
+    '{"scores":{"premature":n,"questions":n,"frame":n,"depth":n,"brevity":n,"curiosity":n,"bridge":n},',
+    '"why":{"premature":"one sentence","questions":"…","frame":"…","depth":"…","brevity":"…","curiosity":"…","bridge":"…"},',
+    '"best":"the single strongest thing they said and why it worked",',
+    '"worst":"the exact moment leverage was lost, quoting them",',
+    '"missed":"the one question they should have asked and did not",',
+    '"rewriteBefore":"their weakest actual line, verbatim","rewriteAfter":"the elite version of that same line",',
+    '"reframe":"the one-sentence reframe that would have landed here",',
+    '"bridge":"the exact second-conversation ask to use in this situation",',
+    '"drill":"one specific drill for next time, imperative voice"}'
+  ].filter(Boolean).join("\n");
+  try{
+    const o=await SAMPLE.json(prompt,{modelTier:"complex",cache:false});
+    const sc={}; let total=0;
+    CATS.forEach(function(c){ const v=clamp(Math.round(Number(o.scores&&o.scores[c[0]])||5),1,10); sc[c[0]]=v; total+=v });
+    return {scores:sc,total:total,coach:{
+      why:o.why||{},best:o.best||"",worst:o.worst||"",missed:o.missed||"",
+      rewriteBefore:o.rewriteBefore||"",rewriteAfter:o.rewriteAfter||"",
+      reframe:o.reframe||"",bridge:o.bridge||R.scen.bridge,drill:o.drill||""}};
+  }catch(e){ return fallback() }
+}
+
+/* ============================================================
+   RENDER — SCORECARD
+   ============================================================ */
+function bandColor(v){ return v>=8?"var(--good)":v>=6?"var(--warn)":"var(--bad)" }
+function renderScore(run){
+  const c=run.coach||{}, why=c.why||{};
+  const rows=CATS.map(function(k){
+    const v=run.scores[k[0]];
+    return '<div class="rr"><div class="nm">'+esc(k[1])+'</div>'
+      +'<div class="bar"><i style="width:'+(v*10)+'%;background:'+bandColor(v)+'"></i></div>'
+      +'<div class="scv" style="color:'+bandColor(v)+'">'+v+'</div>'
+      +'<div class="why">'+esc(why[k[0]]||k[2])+'</div></div>';
+  }).join("");
+  const avg=RUNS.length>1?Math.round(RUNS.filter(function(r){return r.total}).reduce(function(a,r){return a+r.total},0)/RUNS.filter(function(r){return r.total}).length):null;
+  const delta=avg!=null?run.total-avg:null;
+  const bits=[];
+  bits.push('<div class="row" style="margin-bottom:16px"><div style="flex:1"><p class="eyebrow">'+esc(run.setting)+' · '+esc(run.who)+'</p>'
+    +'<h1 style="font-size:32px;margin-top:4px">'+esc(run.scenarioTitle)+'</h1></div>'
+    +'<span class="chip '+(run.won?"good":"bad")+'">'+esc(run.result)+'</span></div>');
+  bits.push('<div class="panel pad" style="margin-bottom:16px">'
+    +'<div class="total"><div class="big" style="color:'+bandColor(run.total/7)+'">'+run.total+'</div><div class="of">/ 70</div>'
+    +'<div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">'
+    +'<span class="chip">'+run.m.durationSec+'s window</span>'
+    +'<span class="chip">'+run.m.talkShare+'% you talked</span>'
+    +'<span class="chip">'+run.m.questions+' question'+(run.m.questions===1?'':'s')+'</span>'
+    +'<span class="chip '+(run.m.hits.length?"bad":"good")+'">'+run.m.hits.length+' advice jump'+(run.m.hits.length===1?'':'s')+'</span>'
+    +(delta!=null?'<span class="chip '+(delta>=0?"good":"bad")+'">'+(delta>=0?"+":"")+delta+' vs your average</span>':"")
+    +'</div></div>'
+    +'<div class="rubric">'+rows+'</div></div>');
+  bits.push('<div class="coach">');
+  if(c.best) bits.push('<div class="cbox hi"><h3>Strongest move</h3><p>'+esc(c.best)+'</p></div>');
+  if(c.worst) bits.push('<div class="cbox lo"><h3>Where you lost leverage</h3><p>'+esc(c.worst)+'</p></div>');
+  if(c.missed) bits.push('<div class="cbox"><h3>The question you missed</h3><p class="quote">'+esc(c.missed)+'</p></div>');
+  if(c.reframe) bits.push('<div class="cbox"><h3>The reframe that would have landed</h3><p class="quote">'+esc(c.reframe)+'</p></div>');
+  if(c.rewriteAfter) bits.push('<div class="cbox fix"><h3>Rewrite</h3>'
+    +(c.rewriteBefore?'<p style="color:var(--bad)">You said: &ldquo;'+esc(c.rewriteBefore)+'&rdquo;</p>':"")
+    +'<p class="quote">Say instead: &ldquo;'+esc(c.rewriteAfter)+'&rdquo;</p></div>');
+  if(c.bridge) bits.push('<div class="cbox fix"><h3>The bridge for this situation</h3><p class="quote">&ldquo;'+esc(c.bridge)+'&rdquo;</p></div>');
+  if(c.drill) bits.push('<div class="cbox fix"><h3>Your drill</h3><p>'+esc(c.drill)+'</p></div>');
+  if(run.drillBreaks&&run.drillBreaks.length) bits.push('<div class="cbox lo" style="grid-column:1/-1"><h3>Constraint</h3><p>'+run.drillBreaks.map(esc).join("<br>")+'</p></div>');
+  bits.push('</div>');
+  bits.push('<div class="launch" style="margin-top:18px">'
+    +'<button class="btn primary" id="btnAgain">Run this scenario again</button>'
+    +'<button class="btn" id="btnNext">New scenario</button>'
+    +'<button class="btn ghost" id="btnSeeProg">See progress</button></div>');
+  bits.push('<details style="margin-top:20px"><summary class="eyebrow" style="cursor:pointer">Full transcript</summary>'
+    +'<div class="panel pad" style="margin-top:10px">'+run.turns.filter(function(t){return t.role!=="env"}).map(function(t){
+      return '<div class="turn '+(t.role==="prospect"?"p":"a")+'" style="margin-bottom:12px"><div class="who">'
+        +(t.role==="prospect"?esc(run.who.split(" ")[0].toUpperCase()):"YOU")+'</div><div class="txt">'+esc(t.text)+'</div></div>';
+    }).join("")+'</div></details>');
+  $("#scoreBody").innerHTML=bits.join("");
+  $("#btnAgain").onclick=function(){ if(lastConfig) newRun(lastConfig) };
+  $("#btnNext").onclick=function(){ go("deck") };
+  $("#btnSeeProg").onclick=function(){ go("progress") };
+}
+
+/* ============================================================
+   RENDER — RECENT
+   ============================================================ */
+function renderRecent(){
+  const done=RUNS.filter(function(r){return r.total});
+  $("#runCount").textContent=done.length?done.length+" logged":"none yet";
+  if(!done.length){
+    $("#recentWrap").innerHTML='<div class="panel pad" style="grid-column:1/-1"><p class="lede" style="font-size:15px">No runs yet. Fifteen minutes a day: one cold run, read the score, rewrite your weakest line, then run the same scenario again.</p></div>';
+    $("#btnReplay").hidden=true; return;
+  }
+  $("#btnReplay").hidden=false;
+  $("#recentWrap").innerHTML=done.slice(0,8).map(function(r){
+    return '<button class="rcard" data-run="'+esc(r.id)+'">'
+      +'<div class="row"><span class="n" style="color:'+bandColor(r.total/7)+'">'+r.total+'</span>'
+      +'<span class="chip '+(r.won?"good":"")+'" style="margin-left:auto">'+(r.won?"earned":"missed")+'</span></div>'
+      +'<div class="t">'+esc(r.scenarioTitle)+'</div>'
+      +'<div class="mono dim" style="font-size:11px">'+new Date(r.ts).toLocaleDateString(undefined,{month:"short",day:"numeric"})
+      +' · '+esc(r.setting.split(" ").slice(0,2).join(" "))+'</div></button>';
+  }).join("");
+  $$("#recentWrap [data-run]").forEach(function(b){
+    b.onclick=function(){ const r=RUNS.filter(function(x){return x.id===b.dataset.run})[0]; if(r){ go("score"); renderScore(r) } };
+  });
+}
+
+/* ============================================================
+   RENDER — PROGRESS
+   ============================================================ */
+let hidden={};
+function renderProgress(){
+  const done=RUNS.filter(function(r){return r.total&&r.scores}).slice().reverse();
+  if(done.length<1){
+    $("#progBody").innerHTML='<div class="panel pad"><p class="lede">Run a few conversations and the trend lines appear here — one line per rubric category, so you can see which single dimension is holding the total down.</p></div>';
+    return;
+  }
+  const avgOf=function(arr,k){return arr.length?arr.reduce(function(a,r){return a+r.scores[k]},0)/arr.length:0};
+  const last5=done.slice(-5), first3=done.slice(0,3);
+  const weakest=CATS.slice().sort(function(a,b){return avgOf(last5,a[0])-avgOf(last5,b[0])})[0];
+  const totals=done.map(function(r){return r.total});
+  const bestT=Math.max.apply(null,totals);
+  const wonPct=Math.round(done.filter(function(r){return r.won}).length/done.length*100);
+  const jumps=done.reduce(function(a,r){return a+(r.m&&r.m.hits?r.m.hits.length:0)},0);
+  const bridgeTimes=done.map(function(r){return r.m&&r.m.bridgeAt}).filter(function(x){return x!=null});
+  const avgBridge=bridgeTimes.length?Math.round(bridgeTimes.reduce(function(a,b){return a+b},0)/bridgeTimes.length):null;
+
+  const stats='<div class="grid3" style="margin-bottom:18px">'
+    +'<div class="stat"><div class="k">Last 5 average</div><div class="v" style="color:'+bandColor(last5.reduce(function(a,r){return a+r.total},0)/last5.length/7)+'">'+Math.round(last5.reduce(function(a,r){return a+r.total},0)/last5.length)+'</div><div class="d">of 70 · best ever '+bestT+'</div></div>'
+    +'<div class="stat"><div class="k">Weakest category</div><div class="v" style="font-size:20px;color:var(--bad)">'+esc(weakest[1])+'</div><div class="d">averaging '+avgOf(last5,weakest[0]).toFixed(1)+' / 10 over your last '+last5.length+'</div></div>'
+    +'<div class="stat"><div class="k">Second conversations earned</div><div class="v">'+wonPct+'%</div><div class="d">'+done.filter(function(r){return r.won}).length+' of '+done.length+' runs</div></div>'
+    +'<div class="stat"><div class="k">Advice jumps</div><div class="v" style="color:'+(jumps?"var(--bad)":"var(--good)")+'">'+jumps+'</div><div class="d">total flagged selling lines</div></div>'
+    +(avgBridge!=null?'<div class="stat"><div class="k">Average time to bridge</div><div class="v">'+Math.floor(avgBridge/60)+':'+String(avgBridge%60).padStart(2,"0")+'</div><div class="d">target: under 1:30</div></div>':"")
+    +'</div>';
+
+  const legend='<div class="legend">'+CATS.map(function(c){
+    return '<button class="lg'+(hidden[c[0]]?" off":"")+'" data-cat="'+c[0]+'"><i style="background:'+CATCOLOR[c[0]]+'"></i>'+esc(c[1])
+      +' <span class="mono dim">'+avgOf(last5,c[0]).toFixed(1)+'</span></button>';
+  }).join("")+'</div>';
+
+  const chart='<div class="panel pad" style="margin-bottom:18px"><div class="row" style="margin-bottom:6px">'
+    +'<h2 style="flex:1">Score trend by category</h2><span class="eyebrow">1–10 per run</span></div>'
+    +'<div class="chartbox">'+lineChart(done)+'</div>'+legend+'</div>';
+
+  const movers='<div class="panel pad" style="margin-bottom:18px"><h2 style="margin-bottom:10px">Movement</h2>'
+    +'<table><thead><tr><th>Category</th><th class="num">First 3</th><th class="num">Last 5</th><th class="num">Change</th></tr></thead><tbody>'
+    +CATS.map(function(c){
+      const a=avgOf(first3,c[0]),b=avgOf(last5,c[0]),d=b-a;
+      return '<tr><td>'+esc(c[1])+'</td><td class="num dim">'+a.toFixed(1)+'</td><td class="num">'+b.toFixed(1)+'</td>'
+        +'<td class="num" style="color:'+(d>.3?"var(--good)":d<-.3?"var(--bad)":"var(--ink-3)")+'">'+(d>=0?"+":"")+d.toFixed(1)+'</td></tr>';
+    }).join("")+'</tbody></table></div>';
+
+  const byScen={};
+  done.forEach(function(r){ (byScen[r.scenarioTitle]=byScen[r.scenarioTitle]||[]).push(r.total) });
+  const weak=Object.keys(byScen).map(function(k){return{k:k,n:byScen[k].length,avg:byScen[k].reduce(function(a,b){return a+b},0)/byScen[k].length}})
+    .sort(function(a,b){return a.avg-b.avg}).slice(0,6);
+  const scenTbl='<div class="panel pad"><h2 style="margin-bottom:10px">Scenarios that beat you</h2>'
+    +'<table><thead><tr><th>Trigger</th><th class="num">Runs</th><th class="num">Avg</th></tr></thead><tbody>'
+    +weak.map(function(w){return '<tr><td>'+esc(w.k)+'</td><td class="num dim">'+w.n+'</td><td class="num" style="color:'+bandColor(w.avg/7)+'">'+Math.round(w.avg)+'</td></tr>'}).join("")
+    +'</tbody></table></div>';
+
+  $("#progBody").innerHTML=stats+chart+movers+scenTbl;
+  $$("#progBody [data-cat]").forEach(function(b){
+    b.onclick=function(){ hidden[b.dataset.cat]=!hidden[b.dataset.cat]; renderProgress() };
+  });
+}
+function lineChart(done){
+  const W=Math.max(560,done.length*46+90), H=250, L=42, Rr=16, T=14, B=30;
+  const iw=W-L-Rr, ih=H-T-B, n=done.length;
+  const x=function(i){ return n===1?L+iw/2:L+i*(iw/(n-1)) };
+  const y=function(v){ return T+ih-((v-1)/9)*ih };
+  let g="";
+  for(let v=1;v<=10;v+=3){
+    g+='<line x1="'+L+'" y1="'+y(v).toFixed(1)+'" x2="'+(L+iw)+'" y2="'+y(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>'
+     +'<text x="'+(L-9)+'" y="'+(y(v)+4).toFixed(1)+'" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">'+v+'</text>';
+  }
+  done.forEach(function(r,i){
+    if(n<=14||i%Math.ceil(n/12)===0)
+      g+='<text x="'+x(i).toFixed(1)+'" y="'+(H-9)+'" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">'+(i+1)+'</text>';
+  });
+  CATS.forEach(function(c){
+    if(hidden[c[0]]) return;
+    const pts=done.map(function(r,i){return x(i).toFixed(1)+","+y(r.scores[c[0]]).toFixed(1)});
+    g+='<polyline points="'+pts.join(" ")+'" fill="none" stroke="'+CATCOLOR[c[0]]+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>';
+    g+='<circle cx="'+x(n-1).toFixed(1)+'" cy="'+y(done[n-1].scores[c[0]]).toFixed(1)+'" r="3.5" fill="'+CATCOLOR[c[0]]+'"/>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="Score trend by rubric category">'
+    +'<text x="'+L+'" y="'+(H-9)+'" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)" opacity="0">.</text>'+g+'</svg>';
+}
+
+/* ============================================================
+   RENDER — LIBRARY
+   ============================================================ */
+function renderLibrary(){
+  $("#phraseBank").innerHTML=PHRASES.map(function(p){
+    return '<div class="g"><h3>'+esc(p[0])+'</h3><p class="quote" style="font-size:15px;margin-top:4px">&ldquo;'+esc(p[1])+'&rdquo;</p></div>';
+  }).join("");
+  $("#qBank").innerHTML=QBANK.map(function(g){
+    return '<div class="g"><h3>'+esc(g[0])+'</h3><ul>'+g[1].map(function(q){return '<li>'+esc(q)+'</li>'}).join("")+'</ul></div>';
+  }).join("");
+  paintLib("");
+}
+function paintLib(q){
+  q=q.toLowerCase();
+  const list=SCEN.filter(function(s){ return !q||(s.title+" "+s.line+" "+s.who+" "+s.setting).toLowerCase().indexOf(q)>=0 });
+  $("#libGrid").innerHTML=list.map(function(s){
+    return '<div class="sc"><div class="no">'+String(s.id).padStart(2,"0")+' · '+esc(s.setting)+'</div><h3>'+esc(s.title)+'</h3>'
+      +'<p class="said">&ldquo;'+esc(s.line)+'&rdquo;</p><dl>'
+      +'<dt>Bad instinct</dt><dd class="x">'+esc(s.bad)+'</dd>'
+      +'<dt>Strong response</dt><dd>'+esc(s.strong)+'</dd>'
+      +'<dt>Follow-up</dt><dd>'+esc(s.follow)+'</dd>'
+      +'<dt>Reframe</dt><dd>'+esc(s.reframe)+'</dd>'
+      +'<dt>Bridge</dt><dd>'+esc(s.bridge)+'</dd></dl>'
+      +'<button class="btn" style="margin-top:12px;width:100%" data-run-scen="'+s.id+'">Run this scenario</button></div>';
+  }).join("");
+  $$("#libGrid [data-run-scen]").forEach(function(b){
+    b.onclick=function(){
+      const s=SCEN[Number(b.dataset.runScen)-1];
+      $("#selScenario").value=s.id; $("#selSetting").value=s.setting; $("#selProspect").value=s.who;
+      go("deck"); window.scrollTo({top:0,behavior:"smooth"});
+    };
+  });
+}
+
+/* ============================================================
+   NAV + WIRING
+   ============================================================ */
+function go(v){
+  view=v;
+  $$(".view").forEach(function(s){ s.classList.toggle("on",s.id==="v-"+v) });
+  $$("nav button").forEach(function(b){
+    if(b.dataset.go==="deck"&&(v==="deck"||v==="live")) b.setAttribute("aria-current","page");
+    else if(b.dataset.go===v) b.setAttribute("aria-current","page");
+    else b.removeAttribute("aria-current");
+  });
+  if(v!=="live"&&R&&R.live){ /* keep run alive */ }
+  window.scrollTo({top:0});
+}
+function fillSelects(){
+  $("#selSetting").innerHTML=SETTINGS.map(function(s){return '<option>'+esc(s)+'</option>'}).join("");
+  $("#selProspect").innerHTML=PROSPECTS.map(function(s){return '<option>'+esc(s)+'</option>'}).join("");
+  $("#selScenario").innerHTML=SCEN.map(function(s){return '<option value="'+s.id+'">'+String(s.id).padStart(2,"0")+' — '+esc(s.title)+'</option>'}).join("");
+  $("#selDrill").innerHTML=DRILLS.map(function(d){return '<option value="'+d.id+'">'+esc(d.name)+'</option>'}).join("");
+}
+function currentConfig(){
+  const s=SCEN[Number($("#selScenario").value)-1];
+  const drill=DRILLS.filter(function(d){return d.id===$("#selDrill").value})[0];
+  const scen=drill.id==="advisor"?Object.assign({},s,{line:"I already have a financial advisor, so I'm probably all set.",hidden:s.hidden}):s;
+  return {setting:$("#selSetting").value,who:$("#selProspect").value,scen:scen,level:adaptiveLevel(),drill:drill};
+}
+function randomize(){
+  $("#selSetting").selectedIndex=Math.floor(Math.random()*SETTINGS.length);
+  $("#selProspect").selectedIndex=Math.floor(Math.random()*PROSPECTS.length);
+  const s=SCEN[Math.floor(Math.random()*SCEN.length)];
+  $("#selScenario").value=s.id; $("#selSetting").value=s.setting; $("#selProspect").value=s.who;
+}
+$("#selScenario").addEventListener("change",function(){
+  const s=SCEN[Number(this.value)-1]; $("#selSetting").value=s.setting; $("#selProspect").value=s.who;
+});
+$$("nav button").forEach(function(b){ b.onclick=function(){ go(b.dataset.go) } });
+$("#btnRandom").onclick=function(){ randomize() };
+$("#btnStart").onclick=async function(){ await primeAudio(); newRun(currentConfig()) };
+$("#btnReplay").onclick=async function(){ if(lastConfig){ await primeAudio(); newRun(lastConfig) } };
+$("#btnEnd").onclick=function(){ endRun(R&&R.outcome==="accepted"?"accepted":"manual") };
+$("#btnAbort").onclick=function(){ if(R){R.live=false;clearInterval(R.tick)} Voice.stop(); Voice.shutUp(); go("deck") };
+$("#micBtn").onclick=function(){ if(Voice.want){Voice.stop()}else{Voice.shutUp();Voice.start()} };
+$("#btnCutIn").onclick=function(){ Voice.shutUp(); Voice.start() };
+$("#btnRepeat").onclick=function(){
+  const last=R&&R.turns.filter(function(t){return t.role==="prospect"}).pop();
+  if(last){ Voice.stop(); Voice.say(last.text,function(){ if(R&&R.live&&$("#chkVoice").checked) Voice.start() }) }
+};
+$("#btnSend").onclick=function(){ const v=$("#typed").value; $("#typed").value=""; submitAdvisor(v) };
+$("#typed").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); $("#btnSend").click() } });
+$("#chkVoice").addEventListener("change",function(){ if(!this.checked){Voice.stop();Voice.shutUp()} });
+$("#libSearch").addEventListener("input",function(){ paintLib(this.value) });
+
+async function primeAudio(){
+  try{ if(window.speechSynthesis){ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u) } }catch(e){}
+  if(!Voice.supported()){ Voice.blocked=true; return }
+  try{
+    if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+      const st=await navigator.mediaDevices.getUserMedia({audio:true});
+      st.getTracks().forEach(function(t){t.stop()});
+    }
+  }catch(e){ Voice.blocked=true; setTimeout(micDenied,50) }
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+fillSelects(); randomize(); renderLibrary(); renderRecent(); renderProgress();
+Voice.init();
+$("#micNote").textContent=Voice.supported()?"Voice on — the prospect speaks first, then just talk.":"This browser has no speech recognition — type your replies.";
+if(!Voice.supported()) $("#chkVoice").checked=false;
+function looseJSON(t){
+  if(!t) throw new Error("empty reply");
+  try{ return JSON.parse(t) }catch(e){}
+  const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if(fence){ try{ return JSON.parse(fence[1]) }catch(e){} }
+  const brace=t.match(/\{[\s\S]*\}/);
+  if(brace){ try{ return JSON.parse(brace[0]) }catch(e){} }
+  throw new Error("unparseable reply");
+}
+function serverSampler(){
+  return { json: async function(input,opts){
+    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({input:input,tier:(opts&&opts.modelTier)==="complex"?"complex":"default"})});
+    if(!r.ok) throw new Error("chat "+r.status);
+    const j=await r.json();
+    return looseJSON(j.text);
+  }};
+}
+(async function boot(){
+  let note="";
+  try{
+    const h=await fetch("/api/health",{cache:"no-store"});
+    if(h.ok){
+      const j=await h.json();
+      SERVER=true;
+      if(j.ai){ SAMPLE=serverSampler(); note=""; }
+      else note="Server has no ANTHROPIC_API_KEY — running the built-in prospect engine.";
+    }
+  }catch(e){}
+  if(!SAMPLE){
+    try{ SAMPLE=await claude.use("sample") }catch(e){ SAMPLE=null }
+  }
+  if(!SAMPLE&&!note) note="Running on the built-in prospect engine. Scenario library and scoring still work.";
+  if(note) $("#micNote").textContent=note;
+  loadRuns();
+})();
+</script>
+
+</head>
+<body></body>
+</html>
