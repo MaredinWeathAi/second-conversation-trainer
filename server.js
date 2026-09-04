@@ -16,6 +16,9 @@ const SESSION_DAYS = 30;
 const COOKIE = "sct_s";
 
 let KEY = process.env.ANTHROPIC_API_KEY || "";
+let TTS_KEY = process.env.OPENAI_API_KEY || "";
+const TTS_KEY_FILE = () => path.join(DATA_DIR, "ttskey");
+const TTS_VOICE = { m: process.env.TTS_VOICE_M || "cedar", f: process.env.TTS_VOICE_F || "marin" };
 const KEY_FROM_ENV = !!KEY;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
 let PROVIDER = "none";
@@ -137,7 +140,37 @@ async function detectProvider() {
     console.log("[provider] ollama model=%s", pick);
   } catch (e) { PROVIDER = "none"; console.log("[provider] none"); }
 }
+function openai(pathname, method, body, raw) {
+  return new Promise((resolve, reject) => {
+    const payload = body ? JSON.stringify(body) : null;
+    const req = https.request({
+      hostname: "api.openai.com", path: pathname, method,
+      headers: Object.assign({ authorization: "Bearer " + TTS_KEY },
+        payload ? { "content-type": "application/json", "content-length": Buffer.byteLength(payload) } : {})
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => {
+        const buf = Buffer.concat(chunks);
+        if (res.statusCode >= 200 && res.statusCode < 300) return resolve(raw ? buf : JSON.parse(buf.toString() || "{}"));
+        let msg = "HTTP " + res.statusCode;
+        try { msg = JSON.parse(buf.toString()).error.message; } catch (e) {}
+        reject(Object.assign(new Error(redact(msg)), { status: res.statusCode }));
+      });
+    });
+    req.on("error", (e) => reject(new Error(redact(e.message))));
+    req.setTimeout(45000, () => req.destroy(new Error("tts timeout")));
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
 function loadSavedKey() {
+  try {
+    if (!TTS_KEY) {
+      const k = fs.readFileSync(TTS_KEY_FILE(), "utf8").trim();
+      if (/^sk-/.test(k)) { TTS_KEY = k; console.log("[tts] restored a saved key"); }
+    }
+  } catch (e) {}
   if (KEY) return;
   try {
     const k = fs.readFileSync(KEY_FILE, "utf8").trim();
@@ -203,7 +236,7 @@ app.use((req, res, next) => {
 
 app.get("/api/health", (req, res) => {
   const withKey = !!reqKey(req);
-  res.json({ ok: true, ai: PROVIDER !== "none" || withKey, provider: withKey && PROVIDER !== "anthropic" ? "anthropic-user" : PROVIDER, model: MODELS.default || null });
+  res.json({ ok: true, ai: PROVIDER !== "none" || withKey, provider: withKey && PROVIDER !== "anthropic" ? "anthropic-user" : PROVIDER, model: MODELS.default || null, tts: !!TTS_KEY });
 });
 function reqKey(req) {
   const h = req.get("x-user-key");
@@ -239,6 +272,43 @@ app.delete("/api/key", (req, res) => {
   KEY = ""; PROVIDER = "none";
   try { fs.unlinkSync(KEY_FILE); } catch (e) {}
   res.json({ ok: true });
+});
+
+app.post("/api/ttskey", async (req, res) => {
+  const key = String((req.body && req.body.key) || "").trim();
+  if (!/^sk-[A-Za-z0-9_\-]{10,200}$/.test(key)) return res.json({ ok: false, message: "That does not look like an OpenAI key." });
+  const l = limit("ttskey:" + ipOf(req), 12, 60 * 60000);
+  if (!l.ok) return res.status(429).json({ ok: false, message: "Too many key attempts." });
+  const prev = TTS_KEY;
+  TTS_KEY = key;
+  try {
+    await openai("/v1/audio/speech", "POST", { model: "gpt-4o-mini-tts", voice: TTS_VOICE.m, input: "Testing.", response_format: "wav" }, true);
+    try { fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 }); fs.writeFileSync(TTS_KEY_FILE(), key, { mode: 0o600 }); } catch (e) {}
+    res.json({ ok: true });
+  } catch (e) {
+    TTS_KEY = prev;
+    res.json({ ok: false, message: e.status === 401 ? "That key was rejected by OpenAI." : "Could not verify the key." });
+  }
+});
+
+app.post("/api/tts", async (req, res) => {
+  if (!TTS_KEY) return res.status(503).json({ error: "no_tts" });
+  const l = limit("tts:" + ipOf(req), 400, 10 * 60000);
+  if (!l.ok) return res.status(429).json({ error: "rate_limited" });
+  const text = String((req.body && req.body.text) || "").slice(0, 600);
+  if (!text.trim()) return res.status(400).json({ error: "bad_input" });
+  const voice = (req.body && req.body.woman) ? TTS_VOICE.f : TTS_VOICE.m;
+  const instructions = String((req.body && req.body.instructions) || "").slice(0, 1200);
+  try {
+    const buf = await openai("/v1/audio/speech", "POST",
+      { model: "gpt-4o-mini-tts", voice, input: text, instructions, response_format: "wav" }, true);
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Content-Length", buf.length);
+    res.end(buf);
+  } catch (e) {
+    console.error("[tts]", e.status || "", redact(e.message));
+    res.status(502).json({ error: "upstream" });
+  }
 });
 
 app.post("/api/chat", async (req, res) => {

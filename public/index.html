@@ -309,12 +309,66 @@ tr.hot td{background:var(--bad-soft)}
 .dfb.warn{background:#2A2113;color:#D9BE7E}.dfb.warn b{color:#D2A044}
 .dfb.bad{background:#2E1917;color:#EDA79F}.dfb.bad b{color:#E27C73}
 
+/* home v2 */
+.home{display:flex;flex-direction:column;min-height:calc(100dvh - 120px)}
+.homeTop{display:flex;justify-content:flex-end;height:44px;align-items:center}
+.gear{width:44px;height:44px;border:0;background:none;color:var(--ink-3);display:grid;place-items:center;border-radius:10px}
+.gear svg{width:21px;height:21px}
+.gear:hover{color:var(--ink);background:var(--surface-2)}
+.homeMid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:0}
+#homeLast{margin-bottom:40px;min-height:84px}
+#homeLast .eyebrow{margin-bottom:6px}
+.lastn{font-family:var(--f-display);font-size:44px;font-weight:500;line-height:1;letter-spacing:-.02em}
+.lastd{font-size:15px;color:var(--ink-3);margin:6px 0 0}
+.firstrun{font-size:17px;line-height:1.45;margin:0;max-width:30ch}
+.startBtn{width:100%;min-height:96px;border:0;border-radius:14px;background:var(--accent);color:#fff;
+  font-family:var(--f-body);font-size:24px;font-weight:500;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;-webkit-tap-highlight-color:transparent;transition:.14s}
+.startBtn span{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.72;font-weight:500}
+.startBtn:active{transform:scale(.985)}
+:root[data-theme="dark"] .startBtn,:root:not([data-theme="light"]) .startBtn{color:#14161a}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]) .startBtn{color:#fff}}
+.pickLink{display:block;width:100%;min-height:44px;margin-top:12px;border:0;background:none;
+  color:var(--accent);font-size:17px;font-weight:500}
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;
+  background:color-mix(in srgb,var(--ground) 92%,transparent);backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;border:0;background:none;padding:11px 0 12px;color:var(--ink-3);border-radius:0;
+  font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase}
+nav.tabs button[aria-current="page"]{color:var(--accent);background:none;box-shadow:none}
+nav.tabs button:hover{background:none;color:var(--ink-2)}
+/* picker sheet */
+.sheetbox.tall{max-height:92vh}
+.shead{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.shead h2{flex:1}
+.sect{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 2px}
+.sub{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  opacity:.75;margin:18px 0 0;padding-top:8px;border-top:1px solid var(--line)}
+.prow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;min-height:60px;padding:11px 0;
+  border:0;background:none;text-align:left;border-bottom:1px solid var(--line)}
+.prow:active{background:var(--surface-2)}
+.pr1{grid-column:1;grid-row:1;font-size:17px;font-weight:500;color:var(--ink);text-align:left}
+.pr2{grid-column:1;grid-row:2;font-size:13px;color:var(--ink-3);line-height:1.35;text-align:left}
+.pr3{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--f-mono);font-size:15px;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:right;min-width:2ch}
+.voicestat{font-size:13px;line-height:1.5;color:var(--ink-2);background:var(--surface-2);
+  padding:10px 12px;border-radius:8px;margin:8px 0 0}
+
 .banner{display:flex;gap:11px;align-items:flex-start;padding:11px 14px;border-radius:8px;background:var(--warn-soft);
   color:var(--warn);font-size:13px;line-height:1.45;margin-bottom:14px}
 .banner b{display:block;color:var(--ink)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .drivecta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+@media(min-width:901px){ .tabs{display:none} .wrap{padding-bottom:90px} .home{min-height:auto;padding:40px 0} .homeMid{max-width:520px} }
 @media(max-width:900px){
+  .top{display:none}
+  .wrap{padding:14px 20px 96px}
+  h1{font-size:28px}
+  .startBtn{font-size:22px}
+  .panel{border-radius:12px}
+  .pad{padding:15px 16px}
+
   .hero{grid-template-columns:1fr;gap:20px;align-items:start}
   .stage{grid-template-columns:1fr}
   .signals{position:static}
@@ -333,8 +387,7 @@ tr.hot td{background:var(--bad-soft)}
     <button data-go="deck" aria-current="page">Train</button>
     <button data-go="progress">Progress</button>
     <button data-go="library">Library</button>
-    <button id="btnSettings" title="API key">Key</button>
-    <button id="btnLock" title="Lock this device">Lock</button>
+
   </nav>
 </header>
 
@@ -342,43 +395,16 @@ tr.hot td{background:var(--bad-soft)}
 
 <!-- ============ DECK ============ -->
 <section class="view on" id="v-deck">
-  <div class="hero">
-    <div>
-      <p class="eyebrow">The 90-second window</p>
-      <h1>You are not training a script. You are training restraint.</h1>
-      <div class="seq">
-        <span class="x">Comment</span><i>&rarr;</i><span class="x">Solution</span>
-        <i style="padding:0 8px">is the leak.</i>
-      </div>
-      <div class="seq">
-        <span>Comment</span><i>&rarr;</i><span>Question</span><i>&rarr;</i><span>Clarify</span><i>&rarr;</i><span>Reframe</span><i>&rarr;</i><span>Second conversation</span>
-      </div>
-    </div>
-    <p class="rule">In a formal meeting, solving builds trust.<br>In a social setting, solving too early <b>lowers your status.</b></p>
-  </div>
-
-  <div class="panel pad" style="margin-bottom:20px">
-    <div class="row" style="margin-bottom:14px"><h2 style="flex:1">Set the room</h2><span class="chip acc" id="deckLvl">Difficulty: adaptive</span></div>
-    <div class="setup">
-      <div class="field"><label for="selSetting">Setting</label><select id="selSetting"></select></div>
-      <div class="field"><label for="selProspect">Prospect</label><select id="selProspect"></select></div>
-      <div class="field"><label for="selScenario">Opening trigger</label><select id="selScenario"></select></div>
-      <div class="field"><label for="selDrill">Constraint drill</label><select id="selDrill"></select></div>
-    </div>
-    <div class="drivecta">
-      <button class="btn primary" id="btnDrive" style="font-size:15px;padding:12px 20px">Drive mode — hands free</button>
-      <span class="dim" style="font-size:13px">Continuous reps, spoken scorecards, screen stays dark. Built for the car.</span>
-    </div>
-    <div class="launch">
-      <button class="btn primary" id="btnStart">Start the conversation</button>
-      <button class="btn" id="btnRandom">Randomize</button>
-      <button class="btn ghost" id="btnReplay" hidden>Replay last scenario</button>
-      <span class="dim" style="font-size:13px" id="micNote"></span>
+  <div class="home">
+    <div class="homeTop"><button class="gear" id="btnSettings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+    </button></div>
+    <div class="homeMid">
+      <div id="homeLast"></div>
+      <button class="startBtn" id="btnQuick">Start<span>Random scenario</span></button>
+      <button class="pickLink" id="btnPick">Choose a scenario</button>
     </div>
   </div>
-
-  <div class="row" style="margin-bottom:8px"><h2 style="flex:1">Recent runs</h2><span class="eyebrow" id="runCount"></span></div>
-  <div class="recent" id="recentWrap"></div>
 </section>
 
 <!-- ============ LIVE ============ -->
@@ -478,6 +504,19 @@ tr.hot td{background:var(--bad-soft)}
 
 </main>
 
+<nav class="tabs">
+  <button data-go="deck" aria-current="page"><span>Train</span></button>
+  <button data-go="progress"><span>Progress</span></button>
+  <button data-go="library"><span>Library</span></button>
+</nav>
+
+<div class="sheet" id="pickSheet">
+  <div class="sheetbox tall">
+    <div class="shead"><h2>Choose a scenario</h2><button class="btn ghost" data-close>Close</button></div>
+    <div id="pickBody"></div>
+  </div>
+</div>
+
 <div class="drive" id="driveWrap">
   <div class="dtop">
     <span class="lbl" id="dLbl">Drive mode</span>
@@ -526,8 +565,39 @@ tr.hot td{background:var(--bad-soft)}
       Also keep it on the server, so my other devices work too
     </label>
     <div class="keystate" id="keyState"></div>
-    <p class="fineprint">Stored in this browser and, if ticked, in the app server's memory. It is never written to the page, the repo, or any log. Clear it any time with Remove.</p>
+    <p class="fineprint">Stored in this browser and, if ticked, on the server. Never written to the page, the repo, or any log.</p>
     <button class="btn" id="keyClear" style="margin-top:6px">Remove key</button>
+
+    <h2 style="margin-top:26px">Prospect voice</h2>
+    <p class="voicestat" id="voiceStatus"></p>
+    <div class="field" style="margin-top:12px"><label for="selTts">Voice engine</label>
+      <select id="selTts">
+        <option value="auto">Natural (needs an OpenAI key)</option>
+        <option value="builtin">Built-in — free, works offline</option>
+      </select></div>
+    <div class="keyrow"><input type="password" id="ttsKey" placeholder="OpenAI key, sk-..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"><button class="btn" id="ttsSave">Save</button></div>
+    <p class="fineprint">About $5 a month at three roleplays a day. Only used for speech.</p>
+    <div class="field" style="margin-top:14px"><label for="selAccent">Accent</label>
+      <select id="selAccent">
+        <option value="match">Match the prospect</option>
+        <option value="cuban">Miami Cuban-American</option>
+        <option value="northeast">New York transplant</option>
+        <option value="colombian">Colombian-born</option>
+        <option value="venezuelan">Venezuelan-born</option>
+        <option value="anglo">South Florida</option>
+      </select></div>
+    <div class="field" style="margin-top:14px"><label for="selMix">Who you practise against</label>
+      <select id="selMix">
+        <option value="real">Realistic mix</option>
+        <option value="even">Half men, half women</option>
+        <option value="men">Men only</option>
+        <option value="women">Women only</option>
+      </select></div>
+    <div class="row" style="margin-top:14px;gap:8px">
+      <button class="btn" id="btnPreviewM">Preview man</button>
+      <button class="btn" id="btnPreviewF">Preview woman</button>
+    </div>
+    <button class="btn ghost" id="btnLock" style="margin-top:20px;width:100%">Lock this device</button>
   </div>
 </div>
 
@@ -814,6 +884,7 @@ const $=function(s){return document.querySelector(s)};
 const $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
 const esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 const clamp=function(n,a,b){return Math.max(a,Math.min(b,n))};
+const on=function(sel,ev,fn){ const e=$(sel); if(e) e.addEventListener(ev,fn); return e };
 
 let SAMPLE=null, DB=null, RUNS=[], view="deck";
 let R=null;              // live run
@@ -833,7 +904,7 @@ const ENV_EVENTS=["Someone walks up and claps them on the shoulder mid-sentence.
 const LS="sct.runs.v1";
 function loadLocal(){try{return JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){return[]}}
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(RUNS.slice(0,300)))}catch(e){}}
-let SERVER=false, PROVIDER="none";
+let SERVER=false, PROVIDER="none", NEEDKEY=false;
 const KEYLS="sct.key.v1";
 function getKey(){ try{ return localStorage.getItem(KEYLS)||"" }catch(e){ return "" } }
 function setKey(v){ try{ v?localStorage.setItem(KEYLS,v):localStorage.removeItem(KEYLS) }catch(e){} }
@@ -886,9 +957,7 @@ function adaptiveLevel(){
 }
 function applyAdaptive(){
   const L=adaptiveLevel();
-  $("#lvlTag").textContent="Adaptive · "+L.label;
-  $("#deckLvl").textContent="Now serving: "+L.label.toLowerCase()+" prospects";
-  $("#deckLvl").title=L.desc;
+  const t=$("#lvlTag"); if(t) t.textContent="Adaptive · "+L.label;
 }
 
 /* ============================================================
@@ -1134,7 +1203,7 @@ function addTurn(role,text,extra){
   R.turns.push({role:role,text:text,t:Math.round((Date.now()-R.startedAt)/1000)});
   const el=document.createElement("div");
   el.className="turn "+(role==="prospect"?"p":role==="advisor"?"a":"env");
-  const who=role==="prospect"?R.who.split(" ")[0].toUpperCase():role==="advisor"?"YOU":"";
+  const who=role==="prospect"?String((R.cast&&R.cast.name)||R.who.split(" ")[0]).toUpperCase():role==="advisor"?"YOU":"";
   el.innerHTML='<div class="who">'+esc(who)+'</div><div><div class="txt">'+esc(text)+'</div>'+(extra||"")+'</div>';
   $("#scroll").appendChild(el);
   $("#scroll").scrollTop=$("#scroll").scrollHeight;
@@ -1145,7 +1214,7 @@ function addTurn(role,text,extra){
 function addThinking(){
   const el=document.createElement("div");
   el.className="turn p"; el.id="thinkRow";
-  el.innerHTML='<div class="who">'+esc(R.who.split(" ")[0].toUpperCase())+'</div><div class="txt"><span class="thinking"><i></i><i></i><i></i></span></div>';
+  el.innerHTML='<div class="who">'+esc(String((R.cast&&R.cast.name)||R.who.split(" ")[0]).toUpperCase())+'</div><div class="txt"><span class="thinking"><i></i><i></i><i></i></span></div>';
   $("#scroll").appendChild(el); $("#scroll").scrollTop=$("#scroll").scrollHeight;
 }
 function killThinking(){ const e=$("#thinkRow"); if(e) e.remove() }
@@ -1240,7 +1309,8 @@ function newRun(cfg){
   };
   lastConfig=cfg;
   $("#liveSetting").textContent=cfg.setting+"  ·  "+cfg.level.label+(cfg.drill.id!=="none"?"  ·  drill":"");
-  $("#liveWho").textContent=cfg.who+" — "+scen.title;
+  $("#liveWho").textContent=(R.cast?R.cast.name+" — ":"")+scen.title;
+  const dl=$("#dLbl"); if(dl) dl.textContent=(R.cast?R.cast.name+" · ":"")+cfg.setting;
   $("#scroll").innerHTML=""; $("#micBanner").innerHTML=""; $("#hitBox").hidden=true;
   $("#briefText").innerHTML='<b>Goal:</b> earn a second conversation. Not a sale. Not a solution.';
   $("#drillBox").hidden=cfg.drill.id==="none";
@@ -1387,9 +1457,9 @@ function driveStart(){
 }
 function driveNext(){
   if(!DRIVE.on) return;
-  randomize();
-  const cfg=currentConfig();
-  $("#dLbl").textContent=cfg.setting+" · "+cfg.who;
+  const scen=SCEN[Math.floor(Math.random()*SCEN.length)];
+  const cfg={setting:scen.setting,who:scen.who,scen:scen,level:adaptiveLevel(),drill:DRILLS[0],cast:castProspect(scen)};
+  $("#dLbl").textContent=cfg.cast.name+" · "+cfg.setting;
   $("#dHero").hidden=true; $("#dLive").hidden=false;
   $("#dSay").textContent=""; $("#dYou").hidden=true; $("#dFlags").innerHTML="";
   const fz=$("#dFb"); if(fz) fz.hidden=true;
@@ -1623,8 +1693,7 @@ function paintLib(q){
   $$("#libGrid [data-run-scen]").forEach(function(b){
     b.onclick=function(){
       const s=SCEN[Number(b.dataset.runScen)-1];
-      $("#selScenario").value=s.id; $("#selSetting").value=s.setting; $("#selProspect").value=s.who;
-      go("deck"); window.scrollTo({top:0,behavior:"smooth"});
+      unlockAudio(); primeAudio().then(function(){ startRun(s,null) });
     };
   });
 }
@@ -1635,7 +1704,8 @@ function paintLib(q){
 function go(v){
   view=v;
   $$(".view").forEach(function(s){ s.classList.toggle("on",s.id==="v-"+v) });
-  $$("nav button").forEach(function(b){
+  closeSheets();
+  $$("[data-go]").forEach(function(b){
     if(b.dataset.go==="deck"&&(v==="deck"||v==="live")) b.setAttribute("aria-current","page");
     else if(b.dataset.go===v) b.setAttribute("aria-current","page");
     else b.removeAttribute("aria-current");
@@ -1643,31 +1713,17 @@ function go(v){
   if(v!=="live"&&R&&R.live){ /* keep run alive */ }
   window.scrollTo({top:0});
 }
-function fillSelects(){
-  $("#selSetting").innerHTML=SETTINGS.map(function(s){return '<option>'+esc(s)+'</option>'}).join("");
-  $("#selProspect").innerHTML=PROSPECTS.map(function(s){return '<option>'+esc(s)+'</option>'}).join("");
-  $("#selScenario").innerHTML=SCEN.map(function(s){return '<option value="'+s.id+'">'+String(s.id).padStart(2,"0")+' — '+esc(s.title)+'</option>'}).join("");
-  $("#selDrill").innerHTML=DRILLS.map(function(d){return '<option value="'+d.id+'">'+esc(d.name)+'</option>'}).join("");
-}
-function currentConfig(){
-  const s=SCEN[Number($("#selScenario").value)-1];
-  const drill=DRILLS.filter(function(d){return d.id===$("#selDrill").value})[0];
-  const scen=drill.id==="advisor"?Object.assign({},s,{line:"I already have a financial advisor, so I'm probably all set.",hidden:s.hidden}):s;
-  return {setting:$("#selSetting").value,who:$("#selProspect").value,scen:scen,level:adaptiveLevel(),drill:drill};
-}
-function randomize(){
-  $("#selSetting").selectedIndex=Math.floor(Math.random()*SETTINGS.length);
-  $("#selProspect").selectedIndex=Math.floor(Math.random()*PROSPECTS.length);
-  const s=SCEN[Math.floor(Math.random()*SCEN.length)];
-  $("#selScenario").value=s.id; $("#selSetting").value=s.setting; $("#selProspect").value=s.who;
-}
-$("#selScenario").addEventListener("change",function(){
-  const s=SCEN[Number(this.value)-1]; $("#selSetting").value=s.setting; $("#selProspect").value=s.who;
-});
-$$("nav button").forEach(function(b){ b.onclick=function(){ go(b.dataset.go) } });
-$("#btnRandom").onclick=function(){ randomize() };
-$("#btnStart").onclick=async function(){ await primeAudio(); newRun(currentConfig()) };
-$("#btnReplay").onclick=async function(){ if(lastConfig){ await primeAudio(); newRun(lastConfig) } };
+/* fillSelects retired in v2 */
+
+/* currentConfig retired in v2 */
+
+/* randomize retired in v2 */
+
+
+$$("[data-go]").forEach(function(b){ b.onclick=function(){ go(b.dataset.go) } });
+
+
+
 $("#btnEnd").onclick=function(){ endRun(R&&R.outcome==="accepted"?"accepted":"manual") };
 $("#btnAbort").onclick=function(){ if(R){R.live=false;clearInterval(R.tick)} Voice.stop(); Voice.shutUp(); go("deck") };
 $("#micBtn").onclick=function(){ if(Voice.want){Voice.stop()}else{Voice.shutUp();Voice.start()} };
@@ -1682,7 +1738,7 @@ $("#chkVoice").addEventListener("change",function(){ if(!this.checked){Voice.sto
 $("#libSearch").addEventListener("input",function(){ paintLib(this.value) });
 
 /* drive mode controls */
-$("#btnDrive").onclick=async function(){ await primeAudio(); driveStart() };
+
 $("#dGo").onclick=async function(){ await primeAudio(); driveStart() };
 $("#dEnd").onclick=function(){ driveEnd() };
 $("#dCut").onclick=function(){ Voice.shutUp(); Voice.start() };
@@ -1730,7 +1786,7 @@ $("#keySave").onclick=async function(){
     if(j.ok){
       SAMPLE=serverSampler(); PROVIDER="anthropic";
       paintKeyState("Key works — "+(j.model||"connected")+". The live prospect is on.","ok");
-      $("#micNote").textContent="";
+      NEEDKEY=false;
     } else {
       paintKeyState(j.message||"That key was rejected.","no");
       setKey("");
@@ -1757,10 +1813,9 @@ async function primeAudio(){
 /* ============================================================
    BOOT
    ============================================================ */
-fillSelects(); randomize(); renderLibrary(); renderRecent(); renderProgress();
+renderLibrary(); renderProgress();
 Voice.init();
-$("#micNote").textContent=Voice.supported()?"Voice on — the prospect speaks first, then just talk.":"This browser has no speech recognition — type your replies.";
-if(!Voice.supported()) $("#chkVoice").checked=false;
+if(!Voice.supported()&&$("#chkVoice")) $("#chkVoice").checked=false;
 function looseJSON(t){
   if(!t) throw new Error("empty reply");
   try{ return JSON.parse(t) }catch(e){}
@@ -1805,15 +1860,7 @@ function serverSampler(){
   if(!SAMPLE){
     try{ SAMPLE=await claude.use("sample") }catch(e){ SAMPLE=null }
   }
-  if(note==="needkey"){
-    $("#micNote").innerHTML='No API key yet \u2014 the prospect is scripted until you add one.';
-    const b=document.createElement("button");
-    b.className="btn"; b.textContent="Add API key"; b.style.marginLeft="2px";
-    b.onclick=function(){ $("#btnSettings").click() };
-    $("#micNote").parentNode.appendChild(b);
-  } else if(!SAMPLE){
-    $("#micNote").textContent="Running on the built-in prospect engine. Scenario library and scoring still work.";
-  }
+  NEEDKEY=(note==="needkey"||!SAMPLE);
   loadRuns();
 })();
 
@@ -1851,7 +1898,7 @@ function prospectBrief(){
   return [
 'You are playing a real person at a social event. You are not an assistant, a coach, or a game. A financial advisor you have just met is talking to you. You stay in character on every turn no matter what the advisor says. You output STRICT JSON only matching OUTPUT SCHEMA: no prose, no markdown fences, nothing before or after the object.',
 '',
-'=== WHO YOU ARE ===','A '+s.who+'.',
+'=== WHO YOU ARE ===','A '+s.who+'.',castingCard(R.cast,s),
 '=== WHERE YOU ARE ===',R.setting+'.',
 '=== WHAT YOU ALREADY SAID ===','"'+s.line+'"',
 '=== WHAT IS ACTUALLY GOING ON (the advisor does not know this) ===',
@@ -1956,6 +2003,7 @@ function newRun(cfg){
     ts:Date.now(), live:true, startedAt:Date.now(),
     setting:cfg.setting, who:cfg.who, scenarioId:scen.id, scenarioTitle:scen.title,
     scen:scen, level:cfg.level, drill:cfg.drill,
+    cast:cfg.cast||castProspect(scen),
     turns:[], interest:cfg.level.interest, revealed:[], outcome:"open", drillBreaks:[],
     steps:[], pressures:[], solves:0, crits:0, deflects:0, lastSolveTurn:-99,
     lastPressure:null, spokenPositives:0, feedback:[],
@@ -1964,7 +2012,8 @@ function newRun(cfg){
   };
   lastConfig=cfg;
   $("#liveSetting").textContent=cfg.setting+"  ·  "+cfg.level.label+(cfg.drill.id!=="none"?"  ·  drill":"");
-  $("#liveWho").textContent=cfg.who+" — "+scen.title;
+  $("#liveWho").textContent=(R.cast?R.cast.name+" — ":"")+scen.title;
+  const dl=$("#dLbl"); if(dl) dl.textContent=(R.cast?R.cast.name+" · ":"")+cfg.setting;
   $("#scroll").innerHTML=""; $("#micBanner").innerHTML=""; $("#hitBox").hidden=true;
   $("#briefText").innerHTML='<b>Goal:</b> earn a second conversation. Not a sale. Not a solution.';
   $("#drillBox").hidden=cfg.drill.id==="none";
@@ -2345,6 +2394,7 @@ async function endRun(reason){
   const saved={
     id:R.id, ts:R.ts, localDate:localDate, isoWeek:isoWeekOf(d), month:localDate.slice(0,7), year:d.getFullYear(),
     setting:R.setting, who:R.who, scenarioId:R.scenarioId, scenarioTitle:R.scenarioTitle,
+    cast:R.cast?{name:R.cast.name,woman:R.cast.woman,age:R.cast.age,bucket:R.cast.bucket}:null,
     level:R.level.k, difficultyOffset:DIFF_OFFSET[R.level.k]||0, scenarioPriorCount:priorSame,
     drill:R.drill.id, drillBreaks:R.drillBreaks,
     scores:sc.scores, total:sc.total, caps:sc.caps||[], nApplicable:app.length,
@@ -2737,6 +2787,370 @@ function bandChart(hist){
   });
   return '<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="Floor and ceiling by period">'+g+'</svg>';
 }
+
+
+/* ================= CASTING: sex, name, origin, voice ================= */
+/* P(woman) per scenario, weighted to who actually holds these roles. Never locked. */
+const PWOMAN={1:.20,2:.10,3:.35,4:.25,5:.10,6:.15,7:.35,8:.25,9:.45,10:.35,
+ 11:.10,12:.30,13:.07,14:.50,15:.35,16:.15,17:.30,18:.15,19:.40,20:.45,
+ 21:.35,22:.40,23:.35,24:.40,25:.35,26:.35,27:.15,28:.30,29:.50,30:.40};
+
+const NAMES={
+ cuban:{m:["Jorge","Carlos","Luis","Alberto","Orlando","Roberto","Rolando","Armando","Manny","Eddy","Rafael","Lazaro","Osvaldo","Ernesto"],
+        f:["Maritza","Odalys","Vivian","Isabel","Lourdes","Mercy","Yolanda","Marta","Elena","Miriam","Caridad","Magaly","Barbara","Ileana"]},
+ colombian:{m:["Andres","Juan Carlos","Camilo","Felipe","Mauricio","Santiago","German"],
+        f:["Paola","Catalina","Ximena","Natalia","Angela","Claudia","Liliana"]},
+ venezuelan:{m:["Alejandro","Leonardo","Gustavo","Ramon","Romulo","Ricardo"],
+        f:["Adriana","Mariana","Veronica","Daniela","Carolina","Marisela"]},
+ anglo:{m:["Bill","Tom","Richard","Jeff","Scott","Doug","Greg","Chuck"],
+        f:["Susan","Karen","Linda","Nancy","Patricia","Cindy","Beth"]},
+ northeast:{m:["Frank","Anthony","Michael","Joe","Steve","Marc","Howard","Neil","Alan","Marty","Elliot","Vinny"],
+        f:["Debbie","Lori","Sheryl","Renee","Marcy","Joanne","Ellen","Randi","Lisa","Donna"]}
+};
+const ACCENT={
+ cuban:"A {age}-year-old Cuban-American {sex} who grew up in Hialeah and now lives near Palmetto Bay. Native English, Miami cadence: quick, clipped, slightly Spanish-influenced vowels, drops the g on -ing.",
+ colombian:"A {age}-year-old {sex} born in Bogota, twenty-plus years in Miami. Fluent American English with a soft Spanish rhythm and precise consonants, measured pace.",
+ venezuelan:"A {age}-year-old {sex} born in Caracas, twenty years in Miami. Fluent American English with a soft Spanish rhythm, warm and a little formal.",
+ anglo:"A {age}-year-old {sex} raised in South Florida. General American with a faint Southern ease, relaxed and unhurried.",
+ northeast:"A {age}-year-old {sex} from Long Island who moved to Coral Gables. Brisk New York register, dry, a little impatient, warm underneath."
+};
+const ACCENT_LABEL={cuban:"Miami Cuban-American",colombian:"Colombian-born",venezuelan:"Venezuelan-born",anglo:"South Florida",northeast:"New York transplant"};
+const DELIVERY="Conversational and unpolished, never an announcer or narrator. You are at a cocktail party, half-distracted, glancing across the room. Short pauses between thoughts. Friendly but guarded. Keep the accent subtle and natural, never a caricature.";
+
+function ageOf(s){ const m=/(\d{2})/.exec(s.who||""); return m?Number(m[1]):55 }
+function recentNames(){ try{ return JSON.parse(localStorage.getItem("sct.names")||"[]") }catch(e){ return [] } }
+function pushName(n){ try{ const a=recentNames(); a.unshift(n); localStorage.setItem("sct.names",JSON.stringify(a.slice(0,6))) }catch(e){} }
+function pickBucket(age,who){
+  const w={cuban:.40,anglo:.20,northeast:.20,colombian:.10,venezuelan:.10};
+  if(age>=65){ w.venezuelan*=.3; w.cuban*=1.2; w.northeast*=1.2 }
+  if(age<=50){ w.venezuelan*=1.5; w.colombian*=1.3 }
+  if(/retired/i.test(who)) w.northeast*=1.5;
+  if(/HVAC|contractor|printing|distribution/i.test(who)) w.cuban*=1.3;
+  if(/heir/i.test(who)){ w.anglo*=1.5; w.venezuelan*=1.5 }
+  const keys=Object.keys(w); let tot=0; keys.forEach(function(k){tot+=w[k]});
+  let r=Math.random()*tot;
+  for(const k of keys){ r-=w[k]; if(r<=0) return k }
+  return "cuban";
+}
+function castProspect(scen){
+  const mix=(function(){ try{ return localStorage.getItem("sct.mix")||"real" }catch(e){ return "real" } })();
+  let p=PWOMAN[scen.id]!=null?PWOMAN[scen.id]:.35;
+  if(mix==="even") p=.5; else if(mix==="men") p=0; else if(mix==="women") p=1;
+  const woman=Math.random()<p;
+  const age=ageOf(scen);
+  const bucket=pickBucket(age,scen.who);
+  const pool=NAMES[bucket][woman?"f":"m"];
+  const recent=recentNames();
+  const fresh=pool.filter(function(n){return recent.indexOf(n)<0});
+  const name=(fresh.length?fresh:pool)[Math.floor(Math.random()*(fresh.length?fresh.length:pool.length))];
+  pushName(name);
+  const widow=woman&&age>=66&&/retired|executive/i.test(scen.who)&&Math.random()<.4;
+  return {
+    name:name, woman:woman, sex:woman?"woman":"man", age:age, bucket:bucket,
+    accentLabel:ACCENT_LABEL[bucket],
+    accent:ACCENT[bucket].replace("{age}",age).replace("{sex}",woman?"woman":"man"),
+    spouse:Math.random()<.10?"partner":(woman?"husband":"wife"),
+    they:woman?"she":"he", them:woman?"her":"him", their:woman?"her":"his",
+    widow:widow
+  };
+}
+function castingCard(c,scen){
+  const bits=["Your name is "+c.name+". You are a "+c.age+"-year-old "+c.sex+".",
+    "Origin: "+c.accentLabel+". You live in the Miami area.",
+    "You refer to your spouse as \"my "+c.spouse+"\"."];
+  if(c.widow) bits.push("You are widowed. Your late "+(c.woman?"husband":"wife")+" handled all of this and passed about two years ago. The advisor in place was theirs; you have met "+(c.woman?"him":"her")+" once. You do not volunteer this early.");
+  if(c.woman) bits.push("You ask more questions before committing, you are goal-oriented rather than benchmark-oriented, and you punish condescension. You are not more nervous or less numerate than a man would be — do not play it that way.");
+  if(c.woman&&/HVAC|contractor|printing|distribution|developer|logistics/i.test(scen.who))
+    bits.push("You took the business over, or co-own it. Half the vendors still ask for the man who used to run it.");
+  return bits.join(" ");
+}
+
+/* ================= VOICE v2: hosted TTS primary, tuned built-in fallback ================= */
+const BAD_VOICE=/bad news|bahh|bells|boing|bubbles|cellos|good news|jester|junior|organ|superstar|trinoids|whisper|wobble|zarvox|grandma|grandpa|albert|ralph|kathy|deranged|hysterical|princess/i;
+const IS_IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const IS_MAC=/Macintosh/.test(navigator.userAgent)&&!IS_IOS;
+/* Apple withholds Enhanced/Premium and Siri voices from web pages on iOS. Compact is the ceiling there. */
+const VOICE_PREF={
+  ios:{m:["Aaron","Evan","Tom","Nathan","Daniel","Arthur","Fred","Reed","Rocko","Eddy"],
+       f:["Nicky","Samantha","Ava","Zoe","Allison","Susan","Martha","Karen","Moira","Flo","Shelley","Sandy"]},
+  mac:{m:["Tom","Evan","Nathan","Aaron","Alex","Google UK English Male","Fred","Reed"],
+       f:["Ava","Susan","Zoe","Allison","Samantha","Nicky","Google US English","Flo","Shelley"]},
+  other:{m:["Google UK English Male","Microsoft Guy","Microsoft David","Daniel","Alex","Tom"],
+         f:["Google US English","Microsoft Aria","Microsoft Zira","Samantha","Karen","Ava"]}
+};
+function platKey(){ return IS_IOS?"ios":IS_MAC?"mac":"other" }
+function voicesAsync(){
+  return new Promise(function(res){
+    const got=window.speechSynthesis?window.speechSynthesis.getVoices():[];
+    if(got&&got.length) return res(got);
+    let done=false;
+    const fin=function(){ if(done) return; done=true; res(window.speechSynthesis?window.speechSynthesis.getVoices()||[]:[]) };
+    if(window.speechSynthesis) window.speechSynthesis.addEventListener("voiceschanged",fin,{once:true});
+    setTimeout(fin,3000);
+  });
+}
+function chooseBuiltin(voices,woman,age){
+  const en=voices.filter(function(v){ return /^en/i.test(v.lang||"") && !BAD_VOICE.test(v.name||"") });
+  if(!en.length) return {voice:voices[0]||null,fallback:true,why:"no English voice on this device"};
+  const pk=platKey(), sex=woman?"f":"m";
+  let list=VOICE_PREF[pk][sex].slice();
+  /* age nudges, per the platform notes */
+  if(pk==="mac"){ if(!woman&&age<55) list=["Evan","Tom"].concat(list); if(woman&&age>=60) list=["Susan","Ava"].concat(list); }
+  for(const want of list){
+    const exact=en.filter(function(v){ return v.name.toLowerCase().indexOf(want.toLowerCase())>=0 });
+    if(exact.length){
+      const rich=exact.filter(function(v){ return /enhanced|premium/i.test(v.name) });
+      const v=(rich[0]||exact[0]);
+      const perfect=list.indexOf(want)===0;
+      return {voice:v,fallback:!perfect,why:perfect?"":want+" is not on this device"};
+    }
+  }
+  const us=en.filter(function(v){ return /^en-US/i.test(v.lang) });
+  return {voice:us[0]||en[0],fallback:true,why:"none of the preferred voices are installed"};
+}
+/* ---- hosted TTS ---- */
+const TTS={engine:"auto",tripped:false,ctx:null,queue:[],playing:false,cache:new Map()};
+function ttsEngine(){
+  let e="auto"; try{ e=localStorage.getItem("sct.tts")||"auto" }catch(x){}
+  if(e==="builtin"||TTS.tripped) return "builtin";
+  return HAS_TTS?"hosted":"builtin";
+}
+let HAS_TTS=false;
+function unlockAudio(){
+  try{
+    if(!TTS.ctx) TTS.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    if(TTS.ctx.state==="suspended") TTS.ctx.resume();
+    const b=TTS.ctx.createBuffer(1,1,22050);
+    const s=TTS.ctx.createBufferSource(); s.buffer=b; s.connect(TTS.ctx.destination); s.start(0);
+  }catch(e){}
+}
+function ttsInstructions(){
+  const c=R&&R.cast; if(!c) return DELIVERY;
+  let acc=c.accent;
+  try{ const m=localStorage.getItem("sct.accent"); if(m&&m!=="match"&&ACCENT[m]) acc=ACCENT[m].replace("{age}",c.age).replace("{sex}",c.sex) }catch(e){}
+  return acc+" "+DELIVERY;
+}
+async function ttsSentence(text,woman){
+  const key=text+"|"+(woman?"f":"m")+"|"+ttsInstructions().slice(0,60);
+  if(TTS.cache.has(key)) return TTS.cache.get(key);
+  const r=await fetch("/api/tts",{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({text:text,woman:!!woman,instructions:ttsInstructions()})});
+  if(r.status===401){ location.reload(); throw new Error("session") }
+  if(!r.ok) throw new Error("tts "+r.status);
+  const buf=await r.arrayBuffer();
+  const audio=await TTS.ctx.decodeAudioData(buf.slice(0));
+  if(TTS.cache.size>40) TTS.cache.clear();
+  TTS.cache.set(key,audio);
+  return audio;
+}
+function splitSentences(t){
+  return (String(t).match(/[^.!?…]+[.!?…]*/g)||[String(t)])
+    .map(function(x){return x.trim()}).filter(Boolean);
+}
+async function speakHosted(text,woman,done){
+  unlockAudio();
+  const parts=splitSentences(text);
+  let cancelled=false;
+  TTS.cancel=function(){ cancelled=true };
+  try{
+    let t=TTS.ctx.currentTime+0.06;
+    const bufs=[];
+    for(let i=0;i<parts.length;i++){
+      if(cancelled) break;
+      bufs.push(await ttsSentence(parts[i],woman));
+      if(i===0){ /* start as soon as the first sentence is ready */ }
+    }
+    if(cancelled){ done&&done(); return }
+    const srcs=[];
+    bufs.forEach(function(b,i){
+      const s=TTS.ctx.createBufferSource(); s.buffer=b; s.connect(TTS.ctx.destination);
+      s.start(t); srcs.push(s);
+      const gap=/\?\s*$/.test(parts[i])?0.72:(0.18+Math.random()*0.3);
+      t+=b.duration+gap;
+    });
+    TTS.cancel=function(){ cancelled=true; srcs.forEach(function(s){ try{s.stop()}catch(e){} }) };
+    const ms=Math.max(0,(t-TTS.ctx.currentTime)*1000);
+    setTimeout(function(){ if(!cancelled) done&&done(); },ms);
+  }catch(e){
+    TTS.tripped=true;
+    paintVoiceStatus();
+    speakBuiltin(text,woman,done);
+  }
+}
+function speakBuiltin(text,woman,done){
+  const self=Voice;
+  if(!window.speechSynthesis){ done&&done(); return }
+  try{ window.speechSynthesis.cancel() }catch(e){}
+  const parts=splitSentences(text);
+  let i=0;
+  clearInterval(self.kick);
+  self.kick=setInterval(function(){ try{ if(speechSynthesis.paused) speechSynthesis.resume() }catch(e){} },3000);
+  const fin=function(){ clearInterval(self.kick); self.speaking=false; paintMic(); paintDrive(); done&&done() };
+  const next=function(){
+    if(!self.speaking||i>=parts.length) return fin();
+    const chunk=parts[i++].slice(0,180);
+    const u=new SpeechSynthesisUtterance(chunk);
+    if(self.picked){ u.voice=self.picked; u.lang=self.picked.lang }
+    u.rate=1.0+(Math.random()*0.06);
+    u.pitch=woman?(0.98+Math.random()*0.04):(0.92+Math.random()*0.04);
+    u.onend=function(){ setTimeout(next,/\?\s*$/.test(chunk)?600:200) };
+    u.onerror=next;
+    try{ speechSynthesis.speak(u) }catch(e){ fin() }
+  };
+  self.speaking=true; next();
+}
+
+/* ================= HOME v2 + casting + voice routing ================= */
+function isPhone(){ return window.matchMedia("(max-width:900px)").matches }
+
+Voice.say=function(text,done){
+  const woman=!!(R&&R.cast&&R.cast.woman);
+  if(!voiceOn()){ done&&done(); return }
+  this.speaking=true; $("#btnCutIn").hidden=false; paintMic(); paintDrive();
+  const fin=function(){ Voice.speaking=false; $("#btnCutIn").hidden=true; paintMic(); paintDrive(); done&&done() };
+  if(ttsEngine()==="hosted") speakHosted(text,woman,fin);
+  else speakBuiltin(text,woman,fin);
+};
+Voice.shutUp=function(){
+  clearInterval(this.kick); this.speaking=false;
+  try{ if(TTS.cancel) TTS.cancel() }catch(e){}
+  try{ window.speechSynthesis.cancel() }catch(e){}
+  $("#btnCutIn").hidden=true; paintMic(); paintDrive();
+};
+Voice.pickVoice=function(){
+  const woman=!!(R&&R.cast&&R.cast.woman), age=(R&&R.cast&&R.cast.age)||55;
+  const pick=chooseBuiltin(this.voices||[],woman,age);
+  this.picked=pick.voice; this.fallbackWhy=pick.fallback?pick.why:"";
+};
+
+/* --- run start --- */
+function startRun(scen,drill){
+  scen=scen||SCEN[Math.floor(Math.random()*SCEN.length)];
+  drill=drill||DRILLS[0];
+  const cfg={setting:scen.setting,who:scen.who,scen:scen,level:adaptiveLevel(),drill:drill};
+  cfg.cast=castProspect(scen);
+  closeSheets();
+  if(isPhone()&&!DRIVE.on){ DRIVE.on=true; $("#driveWrap").classList.add("on");
+    $("#dCtl").hidden=true; $("#dCtl2").hidden=false; $("#dTap").hidden=false; keepAwake(true); }
+  newRun(cfg);
+}
+function quickStart(){ unlockAudio(); primeAudio().then(function(){ startRun(null,null) }) }
+
+/* --- home --- */
+function renderHome(){
+  const last=RUNS.filter(function(r){return r.total})[0];
+  const el=$("#homeLast"); if(!el) return;
+  if(!last){
+    el.innerHTML='<p class="firstrun">Press Start, talk out loud, and earn a second conversation without pitching.</p>';
+  } else {
+    const d=new Date(last.ts);
+    el.innerHTML='<p class="eyebrow">Last run · '+d.toLocaleDateString(undefined,{weekday:"short"})+'</p>'
+      +'<div class="lastn">'+last.total+'</div>'
+      +'<p class="lastd">'+esc(last.setting)+' · '+esc(String(last.who).split(",")[0])+' · '
+      +esc(last.drill&&last.drill!=="none"?"Drill":"No drill")+'</p>';
+  }
+}
+function renderPicker(){
+  const byBest={};
+  RUNS.forEach(function(r){ if(r.total&&(byBest[r.scenarioId]==null||r.total>byBest[r.scenarioId])) byBest[r.scenarioId]=r.total });
+  const groups={},order=[];
+  SCEN.forEach(function(s){ if(!groups[s.setting]){groups[s.setting]=[];order.push(s.setting)} groups[s.setting].push(s) });
+  let h='<p class="sect">Scenarios</p>';
+  order.forEach(function(g){
+    h+='<p class="sub">'+esc(g)+'</p>';
+    groups[g].forEach(function(s){
+      h+='<button class="prow" data-scen="'+s.id+'"><span class="pr1">'+esc(s.title)+'</span>'
+        +'<span class="pr2">'+esc(String(s.who).split(",")[0])+' · &ldquo;'+esc(s.line.slice(0,44))+(s.line.length>44?"…":"")+'&rdquo;</span>'
+        +'<span class="pr3">'+(byBest[s.id]!=null?byBest[s.id]:"—")+'</span></button>';
+    });
+  });
+  h+='<p class="sect" style="margin-top:26px">Drills</p>';
+  DRILLS.slice(1).forEach(function(d){
+    h+='<button class="prow" data-drill="'+d.id+'"><span class="pr1">'+esc(d.name.split("—")[0].trim())+'</span>'
+      +'<span class="pr2">'+esc(d.rule)+'</span><span class="pr3"></span></button>';
+  });
+  $("#pickBody").innerHTML=h;
+  $$("#pickBody [data-scen]").forEach(function(b){
+    b.onclick=function(){ unlockAudio(); primeAudio().then(function(){ startRun(SCEN[Number(b.dataset.scen)-1],null) }) };
+  });
+  $$("#pickBody [data-drill]").forEach(function(b){
+    b.onclick=function(){ const d=DRILLS.filter(function(x){return x.id===b.dataset.drill})[0];
+      unlockAudio(); primeAudio().then(function(){ startRun(null,d) }) };
+  });
+}
+function closeSheets(){ $$(".sheet").forEach(function(s){ s.classList.remove("on") }) }
+function paintVoiceStatus(){
+  const el=$("#voiceStatus"); if(!el) return;
+  let t;
+  if(ttsEngine()==="hosted") t=TTS.tripped?"Natural voice unavailable this session — using the built-in one.":"Natural voice on. Accent follows the prospect.";
+  else if(!HAS_TTS) t="Built-in voice. Add an OpenAI key for a natural Miami voice.";
+  else t="Built-in voice by choice.";
+  if(ttsEngine()==="builtin"){
+    const v=Voice.picked;
+    t+=v?" Using "+v.name+".":"";
+    if(Voice.fallbackWhy) t+=" "+Voice.fallbackWhy+".";
+    if(IS_IOS) t+=" Safari on iPhone can only reach Apple's basic voices — that is an Apple restriction.";
+  }
+  el.textContent=t;
+}
+
+
+/* ================= WIRING v2 ================= */
+function renderRecent(){ renderHome() }
+function newRunCast(cfg){ return cfg }
+
+on("#btnQuick","click",function(){ quickStart() });
+on("#btnPick","click",function(){ renderPicker(); $("#pickSheet").classList.add("on") });
+$$("[data-close]").forEach(function(b){ b.onclick=function(){ closeSheets() } });
+$$(".sheet").forEach(function(sh){ sh.addEventListener("click",function(e){ if(e.target===sh) closeSheets() }) });
+
+/* settings persistence */
+function loadPrefs(){
+  try{
+    const t=localStorage.getItem("sct.tts"); if(t&&$("#selTts")) $("#selTts").value=t;
+    const a=localStorage.getItem("sct.accent"); if(a&&$("#selAccent")) $("#selAccent").value=a;
+    const m=localStorage.getItem("sct.mix"); if(m&&$("#selMix")) $("#selMix").value=m;
+  }catch(e){}
+}
+on("#selTts","change",function(){ try{localStorage.setItem("sct.tts",this.value)}catch(e){} paintVoiceStatus() });
+on("#selAccent","change",function(){ try{localStorage.setItem("sct.accent",this.value)}catch(e){} });
+on("#selMix","change",function(){ try{localStorage.setItem("sct.mix",this.value)}catch(e){} });
+
+on("#ttsSave","click",async function(){
+  const v=$("#ttsKey").value.trim();
+  const st=$("#voiceStatus");
+  if(!v){ st.textContent="Paste an OpenAI key first."; return }
+  st.textContent="Checking…";
+  try{
+    const r=await fetch("/api/ttskey",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:v})});
+    const j=await r.json();
+    $("#ttsKey").value="";
+    if(j.ok){ HAS_TTS=true; TTS.tripped=false; try{localStorage.setItem("sct.tts","auto")}catch(e){} if($("#selTts")) $("#selTts").value="auto"; }
+    else st.textContent=j.message||"That key was rejected.";
+    if(j.ok) paintVoiceStatus();
+  }catch(e){ st.textContent="Could not reach the server." }
+});
+function previewVoice(woman){
+  unlockAudio();
+  if(!R) R={cast:{woman:woman,age:woman?58:56,sex:woman?"woman":"man",accent:ACCENT.cuban.replace("{age}",57).replace("{sex}",woman?"woman":"man")},live:false};
+  const line=woman?"Honestly? My CPA handles most of it. But go ahead, you've got two minutes before they cut the cake."
+                  :"Yeah, no, I've got a guy for that. Been with him since oh-nine. Why, what do you do?";
+  Voice.voices=window.speechSynthesis?window.speechSynthesis.getVoices():[];
+  R.cast.woman=woman; Voice.pickVoice();
+  Voice.say(line,function(){ paintVoiceStatus() });
+}
+on("#btnPreviewM","click",function(){ previewVoice(false) });
+on("#btnPreviewF","click",function(){ previewVoice(true) });
+
+/* boot additions */
+(async function bootVoice(){
+  Voice.voices=await voicesAsync();
+  try{
+    const r=await fetch("/api/health",{headers:chatHeaders(),cache:"no-store"});
+    if(r.ok){ const j=await r.json(); HAS_TTS=!!j.tts }
+  }catch(e){}
+  loadPrefs(); paintVoiceStatus(); renderHome();
+})();
 
 </script>
 

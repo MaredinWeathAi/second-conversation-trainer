@@ -17,6 +17,7 @@ casual social conversation to a qualified second meeting — not a sales script.
 | `ANTHROPIC_MODEL` | no | Overrides auto-detection. |
 | `APP_PASSCODE` | **yes** | Without it the server logs a warning and runs unprotected. |
 | `SESSION_SECRET` | strongly advised | Without it sessions reset on every deploy. |
+| `OPENAI_API_KEY` | no | Enables the natural voice. Can also be pasted in Settings. |
 | `PORT` | no | Railway sets this. |
 | `DATA_DIR` | no | Where run history JSON is kept. Defaults to `./data`. |
 
@@ -76,6 +77,31 @@ constraint, discovery vs delivery, scripts-vs-skill gap, hollow win rate, and th
 share of runs where the prospect named the real issue themselves. Periods below the
 minimum sample size never render an average - they show the raw values and say how
 many more reps are needed.
+
+## Casting
+
+Every run casts a prospect: sex drawn from a per-scenario probability weighted to who
+actually holds the role (0.07 for an orthopedic surgeon, 0.50 for a family office heir,
+0.45 for a staffing-firm owner), a Miami-appropriate first name drawn from an origin
+bucket (Cuban-American, Colombian, Venezuelan, Anglo South Florida, Northeastern
+transplant) weighted by age and archetype, and an accent template that drives both the
+prospect prompt and the voice. Women aged 66+ in retired-executive scenarios draw a
+widow variant 40% of the time. Nothing is locked to one sex.
+
+## Voice
+
+`speechSynthesis` on iOS Safari can only reach Apple's pre-installed compact voices -
+Samantha, Aaron, Nicky. Enhanced, Premium and Siri voices are withheld from web pages
+by design, so no amount of tuning makes the iPhone sound natural. Chrome on macOS does
+expose downloaded Enhanced/Premium voices.
+
+So: hosted TTS is primary when `OPENAI_API_KEY` is set (`gpt-4o-mini-tts`, whose
+`instructions` field carries the accent and the distracted-at-a-party delivery),
+served through `POST /api/tts` and played sentence by sentence through one AudioContext.
+The built-in engine is the automatic fallback, with platform-aware ordered voice
+preferences, a novelty-voice exclusion list, per-sex pitch, and jittered rate.
+Spanish-locale voices reading English are deliberately never used - they apply Spanish
+letter-to-sound rules to English words and read as a struggling non-native speaker.
 
 ## Drive mode
 
