@@ -1784,6 +1784,16 @@ function serverSampler(){
       else note="needkey";
     }
   }catch(e){}
+  /* Railway's disk is ephemeral: a redeploy wipes the server-side key copy.
+     If this browser still holds one, quietly restore it so other devices keep working. */
+  if(SERVER&&getKey()&&PROVIDER==="none"){
+    try{
+      const r=await fetch("/api/key",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:getKey(),persist:true})});
+      const j=await r.json();
+      if(j&&j.ok){ SAMPLE=serverSampler(); PROVIDER="anthropic"; note=""; }
+    }catch(e){}
+  }
   if(!SAMPLE){
     try{ SAMPLE=await claude.use("sample") }catch(e){ SAMPLE=null }
   }
