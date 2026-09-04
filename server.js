@@ -5,7 +5,8 @@ const path = require("path");
 const https = require("https");
 
 const PORT = process.env.PORT || 3000;
-const KEY = process.env.ANTHROPIC_API_KEY || "";
+let KEY = process.env.ANTHROPIC_API_KEY || "";      // env key, or one saved from the app
+const KEY_FILE = () => path.join(DATA_DIR, "key");
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const RUNS_FILE = path.join(DATA_DIR, "runs.json");
 
@@ -14,7 +15,7 @@ let PROVIDER = "none";           // "anthropic" | "ollama" | "none"
 let MODELS = { default: process.env.ANTHROPIC_MODEL || "", complex: process.env.ANTHROPIC_MODEL || "" };
 
 /* ---------- Anthropic REST helper ---------- */
-function anthropic(pathname, method, body) {
+function anthropic(pathname, method, body, keyOverride) {
   return new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : null;
     const req = https.request({
@@ -22,7 +23,7 @@ function anthropic(pathname, method, body) {
       path: pathname,
       method: method,
       headers: Object.assign({
-        "x-api-key": KEY,
+        "x-api-key": keyOverride || KEY,
         "anthropic-version": "2023-06-01"
       }, payload ? { "content-type": "application/json", "content-length": Buffer.byteLength(payload) } : {})
     }, (res) => {
@@ -89,17 +90,67 @@ async function detectProvider() {
   }
 }
 
+function reqKey(req) {
+  const h = req.get("x-user-key");
+  return (h && /^sk-/.test(h.trim())) ? h.trim() : "";
+}
+function loadSavedKey() {
+  if (KEY) return;
+  try {
+    const k = fs.readFileSync(KEY_FILE(), "utf8").trim();
+    if (/^sk-/.test(k)) { KEY = k; console.log("[key] restored a saved key"); }
+  } catch (e) { /* none */ }
+}
+
 /* ---------- app ---------- */
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: "5m", etag: true }));
 
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, ai: PROVIDER !== "none", provider: PROVIDER, model: MODELS.default || null, ts: Date.now() });
+  const withKey = !!reqKey(req);
+  res.json({
+    ok: true,
+    ai: PROVIDER !== "none" || withKey,
+    provider: withKey && PROVIDER !== "anthropic" ? "anthropic-user" : PROVIDER,
+    model: MODELS.default || null,
+    ts: Date.now()
+  });
+});
+
+/* Save / verify / remove an API key supplied from the app UI. */
+app.post("/api/key", async (req, res) => {
+  const key = (req.body && req.body.key || "").trim();
+  if (!/^sk-/.test(key)) return res.json({ ok: false, message: "That does not look like an Anthropic key." });
+  try {
+    const list = await anthropic("/v1/models?limit=100", "GET", null, key);
+    const ids = (list.data || []).map((m) => m.id);
+    const newest = (re) => ids.filter((id) => re.test(id)).sort().reverse()[0];
+    const fast = newest(/sonnet/i) || newest(/haiku/i) || ids[0];
+    if (req.body && req.body.persist) {
+      KEY = key;
+      PROVIDER = "anthropic";
+      MODELS = { default: fast, complex: newest(/opus/i) || fast };
+      try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(KEY_FILE(), key, { mode: 0o600 }); }
+      catch (e) { console.error("[key] could not persist:", e.message); }
+    }
+    res.json({ ok: true, model: fast });
+  } catch (e) {
+    res.json({ ok: false, message: e.status === 401 ? "That key was rejected by Anthropic." : ("Could not verify: " + e.message) });
+  }
+});
+app.delete("/api/key", (req, res) => {
+  KEY = process.env.ANTHROPIC_API_KEY || "";
+  try { fs.unlinkSync(KEY_FILE()); } catch (e) { /* fine */ }
+  if (!KEY) PROVIDER = "none";
+  res.json({ ok: true });
 });
 
 app.post("/api/chat", async (req, res) => {
-  if (PROVIDER === "none") return res.status(503).json({ error: "no_provider", message: "No ANTHROPIC_API_KEY and no reachable Ollama." });
+  const userKey = reqKey(req);
+  if (PROVIDER === "none" && !userKey) {
+    return res.status(503).json({ error: "no_provider", message: "No API key yet. Add one with the Key button." });
+  }
   const input = req.body && req.body.input;
   const tier = (req.body && req.body.tier) === "complex" ? "complex" : "default";
   const messages = typeof input === "string"
@@ -108,12 +159,12 @@ app.post("/api/chat", async (req, res) => {
   if (!messages || !messages.length) return res.status(400).json({ error: "bad_input" });
   try {
     let text, model;
-    if (PROVIDER === "anthropic") {
+    if (userKey || PROVIDER === "anthropic") {
       const out = await anthropic("/v1/messages", "POST", {
-        model: MODELS[tier] || MODELS.default,
+        model: MODELS[tier] || MODELS.default || "claude-sonnet-4-5",
         max_tokens: tier === "complex" ? 2000 : 700,
         messages: messages
-      });
+      }, userKey);
       text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
       model = out.model;
     } else {
@@ -157,6 +208,7 @@ app.post("/api/runs", (req, res) => {
 
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
+loadSavedKey();
 detectProvider().finally(() => {
   app.listen(PORT, "0.0.0.0", () => {
     console.log("Second Conversation Trainer on :%s  (provider=%s)", PORT, PROVIDER);

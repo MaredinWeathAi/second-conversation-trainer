@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="2nd Convo">
+<meta name="theme-color" content="#121316">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Second Conversation Trainer</title>
@@ -217,10 +224,57 @@ td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-n
 .qbank ul{margin:6px 0 0;padding-left:17px;display:flex;flex-direction:column;gap:5px}
 .qbank li{font-size:13.5px;line-height:1.45;color:var(--ink-2)}
 
+/* ---------- drive mode ---------- */
+.drive{position:fixed;inset:0;z-index:200;background:#0E0F12;color:#EDEEF0;
+  display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 14px)}
+.drive.on{display:flex}
+.dtop{display:flex;align-items:center;gap:12px;flex:none}
+.dtop .lbl{font-family:var(--f-mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#7E848C;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtop .clk{font-family:var(--f-mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:#9AA0A8}
+.dtop .clk.warn{color:#D2A044}.dtop .clk.bad{color:#E27C73}
+.dmeter{height:5px;background:#22252A;border-radius:3px;margin-top:12px;flex:none;overflow:hidden}
+.dmeter i{display:block;height:100%;background:#D2707B;border-radius:3px;transition:width .6s}
+.dstage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;min-height:0;overflow-y:auto;padding:20px 0}
+.dsay{font-family:var(--f-display);font-size:clamp(24px,6.4vw,40px);line-height:1.28;font-style:italic;
+  color:#F2F3F4;margin:0;text-wrap:balance}
+.dstat{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#7E848C;margin:0}
+.dstat.live{color:#D2707B}
+.dyou{font-size:17px;line-height:1.45;color:#9AA0A8;margin:0;border-left:2px solid #3C424A;padding-left:14px}
+.dflags{display:flex;gap:6px;flex-wrap:wrap}
+.dflag{font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;padding:4px 9px;border-radius:5px;background:#2E1917;color:#E27C73}
+.dctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:none}
+.dbtn{border:1px solid #343941;background:#1A1C20;color:#EDEEF0;border-radius:14px;
+  padding:20px 12px;font-size:16px;font-weight:600;min-height:66px;-webkit-tap-highlight-color:transparent}
+.dbtn:active{background:#22252A}
+.dbtn.wide{grid-column:1/-1}
+.dbtn.go{background:#8C2F3B;border-color:#8C2F3B;color:#fff;font-size:19px;min-height:88px}
+.dbtn.stop{color:#E27C73;border-color:#3A2523}
+.dtap{flex:none;border:1px dashed #343941;background:transparent;color:#7E848C;border-radius:14px;
+  padding:16px;font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;width:100%}
+.dtap.hot{border-style:solid;border-color:#D2707B;color:#D2707B;background:#1E1416}
+.dhero{text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;flex:1}
+.dhero h2{font-family:var(--f-display);font-size:clamp(26px,7vw,38px);color:#F2F3F4;margin:0}
+.dhero p{color:#9AA0A8;font-size:15px;line-height:1.5;margin:0;max-width:34ch}
+
+/* ---------- settings sheet ---------- */
+.sheet{position:fixed;inset:0;z-index:300;background:rgba(8,9,11,.6);display:none;align-items:flex-end;justify-content:center}
+.sheet.on{display:flex}
+.sheetbox{background:var(--surface);border-radius:16px 16px 0 0;width:100%;max-width:520px;
+  padding:22px 20px calc(env(safe-area-inset-bottom) + 22px);max-height:88vh;overflow-y:auto;border:1px solid var(--line)}
+.sheetbox h2{margin-bottom:6px}
+.keyrow{display:flex;gap:8px;margin-top:10px}
+.keyrow input{flex:1;font-family:var(--f-mono);font-size:13px}
+.keystate{margin-top:12px;font-size:13.5px;line-height:1.5}
+.keystate b{display:block}
+.ok{color:var(--good)}.no{color:var(--bad)}
+.fineprint{font-size:12.5px;color:var(--ink-3);line-height:1.5;margin-top:14px}
+
 .banner{display:flex;gap:11px;align-items:flex-start;padding:11px 14px;border-radius:8px;background:var(--warn-soft);
   color:var(--warn);font-size:13px;line-height:1.45;margin-bottom:14px}
 .banner b{display:block;color:var(--ink)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.drivecta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
 @media(max-width:900px){
   .hero{grid-template-columns:1fr;gap:20px;align-items:start}
   .stage{grid-template-columns:1fr}
@@ -240,6 +294,7 @@ td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-n
     <button data-go="deck" aria-current="page">Train</button>
     <button data-go="progress">Progress</button>
     <button data-go="library">Library</button>
+    <button id="btnSettings" title="API key">Key</button>
   </nav>
 </header>
 
@@ -269,6 +324,10 @@ td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-n
       <div class="field"><label for="selProspect">Prospect</label><select id="selProspect"></select></div>
       <div class="field"><label for="selScenario">Opening trigger</label><select id="selScenario"></select></div>
       <div class="field"><label for="selDrill">Constraint drill</label><select id="selDrill"></select></div>
+    </div>
+    <div class="drivecta">
+      <button class="btn primary" id="btnDrive" style="font-size:15px;padding:12px 20px">Drive mode — hands free</button>
+      <span class="dim" style="font-size:13px">Continuous reps, spoken scorecards, screen stays dark. Built for the car.</span>
     </div>
     <div class="launch">
       <button class="btn primary" id="btnStart">Start the conversation</button>
@@ -377,6 +436,57 @@ td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-n
 </section>
 
 </main>
+
+<div class="drive" id="driveWrap">
+  <div class="dtop">
+    <span class="lbl" id="dLbl">Drive mode</span>
+    <span class="clk" id="dClk">0:00</span>
+  </div>
+  <div class="dmeter"><i id="dMeter" style="width:18%"></i></div>
+
+  <div class="dstage" id="dStage">
+    <div class="dhero" id="dHero">
+      <h2>Ready when you are.</h2>
+      <p>Fifteen minutes of reps. The prospect talks, you answer out loud, it scores you and starts the next one. You should not need to look at this screen.</p>
+      <p style="color:#7E848C;font-size:13.5px">Park first and run one round to check the mic. Then drive.</p>
+    </div>
+    <div id="dLive" hidden>
+      <p class="dstat" id="dStat">Starting…</p>
+      <p class="dsay" id="dSay"></p>
+      <p class="dyou" id="dYou" hidden></p>
+      <div class="dflags" id="dFlags"></div>
+    </div>
+  </div>
+
+  <button class="dtap" id="dTap" hidden>Tap to talk</button>
+  <div class="dctl" id="dCtl">
+    <button class="dbtn go wide" id="dGo">Start session</button>
+  </div>
+  <div class="dctl" id="dCtl2" hidden style="margin-top:10px">
+    <button class="dbtn" id="dCut">Cut in</button>
+    <button class="dbtn" id="dRep">Say again</button>
+    <button class="dbtn" id="dSkip">Skip scenario</button>
+    <button class="dbtn stop" id="dEnd">End session</button>
+  </div>
+</div>
+
+<div class="sheet" id="keySheet">
+  <div class="sheetbox">
+    <div class="row"><h2 style="flex:1">Anthropic API key</h2><button class="btn ghost" id="keyClose">Done</button></div>
+    <p class="lede" style="font-size:14px">Paste it once. It plays the prospect and writes your scorecards. Without it the app falls back to a scripted prospect.</p>
+    <div class="keyrow">
+      <input type="password" id="keyInput" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <button class="btn primary" id="keySave">Save</button>
+    </div>
+    <label class="row" style="margin-top:12px;font-size:13.5px;cursor:pointer">
+      <input type="checkbox" id="keyShare" style="width:auto;margin:0 8px 0 0" checked>
+      Also keep it on the server, so my other devices work too
+    </label>
+    <div class="keystate" id="keyState"></div>
+    <p class="fineprint">Stored in this browser and, if ticked, in the app server's memory. It is never written to the page, the repo, or any log. Clear it any time with Remove.</p>
+    <button class="btn" id="keyClear" style="margin-top:6px">Remove key</button>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -531,7 +641,15 @@ const ENV_EVENTS=["Someone walks up and claps them on the shoulder mid-sentence.
 const LS="sct.runs.v1";
 function loadLocal(){try{return JSON.parse(localStorage.getItem(LS)||"[]")}catch(e){return[]}}
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(RUNS.slice(0,300)))}catch(e){}}
-let SERVER=false;
+let SERVER=false, PROVIDER="none";
+const KEYLS="sct.key.v1";
+function getKey(){ try{ return localStorage.getItem(KEYLS)||"" }catch(e){ return "" } }
+function setKey(v){ try{ v?localStorage.setItem(KEYLS,v):localStorage.removeItem(KEYLS) }catch(e){} }
+function chatHeaders(){
+  const h={"content-type":"application/json"};
+  const k=getKey(); if(k) h["x-user-key"]=k;
+  return h;
+}
 async function saveRun(run){
   RUNS.unshift(run); saveLocal();
   if(DB){try{await DB.collection("runs").doc(run.id).set(run)}catch(e){}}
@@ -609,6 +727,7 @@ function recomputeMetrics(){
 function paintSignals(){
   if(!R) return;
   recomputeMetrics();
+  paintDrive();
   const d=R.m.durationSec;
   const t=$("#sigTime"); t.textContent=Math.floor(d/60)+":"+String(d%60).padStart(2,"0");
   t.className="v"+(d>150?" bad":d>90?" warn":"");
@@ -657,8 +776,15 @@ const Voice={
     };
     r.onend=function(){
       self.listening=false;
-      if(self.want && !self.blocked){ try{r.start(); self.listening=true;}catch(_){ } }
-      paintMic();
+      if(self.want && !self.blocked){
+        // iOS ends the session after every utterance; restart on a short delay.
+        setTimeout(function(){
+          if(!self.want||self.blocked) return;
+          try{ r.start(); self.listening=true; }catch(_){}
+          paintMic();
+        },250);
+      }
+      paintMic(); paintDrive();
     };
     this.rec=r;
     const load=function(){ self.voices=window.speechSynthesis.getVoices()||[] };
@@ -671,7 +797,16 @@ const Voice={
     const pool=good.length?good:v;
     this.picked=pool[Math.abs(seed)%pool.length];
   },
-  arm(){ clearTimeout(this.timer); const self=this; this.timer=setTimeout(function(){ self.flush() },1500); },
+  arm(){ clearTimeout(this.timer); this.lastHeard=Date.now(); const self=this;
+    this.timer=setTimeout(function(){ self.flush() },1500); },
+  watchdog(){
+    const self=this;
+    clearInterval(this.wd);
+    this.wd=setInterval(function(){
+      if(!self.want||self.blocked||self.speaking) return;
+      if(!self.listening){ try{ self.rec.start(); self.listening=true; paintMic(); }catch(_){} }
+    },4000);
+  },
   flush(){
     clearTimeout(this.timer);
     const txt=(this.buf+" "+this.interim).replace(/\s+/g," ").trim();
@@ -682,28 +817,49 @@ const Voice={
     if(!this.rec||this.blocked) return;
     this.want=true; this.buf=""; this.interim="";
     try{ this.rec.start(); this.listening=true; }catch(_){}
-    paintMic(); paintHeard();
+    this.watchdog();
+    paintMic(); paintHeard(); paintDrive();
   },
-  stop(){ this.want=false; clearTimeout(this.timer); try{this.rec&&this.rec.abort()}catch(_){} this.listening=false; paintMic(); },
+  stop(){ this.want=false; clearTimeout(this.timer); clearInterval(this.wd);
+    try{this.rec&&this.rec.abort()}catch(_){} this.listening=false; paintMic(); paintDrive(); },
   say(text,done){
     const self=this;
-    if(!window.speechSynthesis||!$("#chkVoice").checked){ if(done)done(); return; }
+    if(!window.speechSynthesis||!voiceOn()){ if(done)done(); return; }
     try{ window.speechSynthesis.cancel(); }catch(_){}
-    const u=new SpeechSynthesisUtterance(text);
-    if(this.picked) u.voice=this.picked;
-    u.rate=1.03; u.pitch=1; u.volume=1;
-    u.onend=function(){ self.speaking=false; $("#btnCutIn").hidden=true; paintMic(); if(done)done() };
-    u.onerror=function(){ self.speaking=false; $("#btnCutIn").hidden=true; paintMic(); if(done)done() };
-    this.speaking=true; $("#btnCutIn").hidden=false; paintMic();
-    window.speechSynthesis.speak(u);
+    // iOS drops long utterances and silently pauses mid-queue: speak sentence by
+    // sentence and keep nudging resume() while it is talking.
+    const parts=(String(text).match(/[^.!?\u2026]+[.!?\u2026]*/g)||[String(text)])
+      .map(function(x){return x.trim()}).filter(Boolean);
+    let i=0;
+    clearInterval(self.kick);
+    self.kick=setInterval(function(){
+      try{ if(window.speechSynthesis.paused) window.speechSynthesis.resume() }catch(_){}
+    },3000);
+    const finish=function(){
+      clearInterval(self.kick); self.speaking=false;
+      $("#btnCutIn").hidden=true; paintMic(); paintDrive(); if(done)done();
+    };
+    const next=function(){
+      if(!self.speaking) return finish();
+      if(i>=parts.length) return finish();
+      const u=new SpeechSynthesisUtterance(parts[i++]);
+      if(self.picked) u.voice=self.picked;
+      u.rate=1.03; u.pitch=1; u.volume=1;
+      u.onend=next; u.onerror=next;
+      try{ window.speechSynthesis.speak(u) }catch(e){ finish() }
+    };
+    this.speaking=true; $("#btnCutIn").hidden=false; paintMic(); paintDrive();
+    next();
   },
-  shutUp(){ try{window.speechSynthesis.cancel()}catch(_){} this.speaking=false; $("#btnCutIn").hidden=true; paintMic(); }
+  shutUp(){ clearInterval(this.kick); this.speaking=false;
+    try{window.speechSynthesis.cancel()}catch(_){} $("#btnCutIn").hidden=true; paintMic(); paintDrive(); }
 };
 function paintMic(){
   const m=$("#micBtn");
   m.className="mic"+(Voice.listening&&Voice.want?" live":Voice.speaking?" speak":"");
   m.setAttribute("aria-pressed",Voice.want?"true":"false");
 }
+function voiceOn(){ return DRIVE.on || $("#chkVoice").checked }
 function paintHeard(){
   const h=$("#heard");
   if(Voice.speaking){ h.innerHTML='<span class="hint">They’re talking. Tap <b>Cut in</b> to interrupt.</span>'; return }
@@ -719,6 +875,20 @@ function micDenied(){
     +'Until then everything still runs by typing.</div></div>';
   paintMic(); paintHeard();
 }
+
+/* ============================================================
+   SCREEN WAKE LOCK
+   ============================================================ */
+let wakeLock=null;
+async function keepAwake(on){
+  try{
+    if(on){ if(!wakeLock&&navigator.wakeLock) wakeLock=await navigator.wakeLock.request("screen"); }
+    else if(wakeLock){ await wakeLock.release(); wakeLock=null; }
+  }catch(e){ wakeLock=null; }
+}
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible"&&DRIVE.on) keepAwake(true);
+});
 
 /* ============================================================
    PROSPECT ENGINE
@@ -776,6 +946,8 @@ function addTurn(role,text,extra){
   el.innerHTML='<div class="who">'+esc(who)+'</div><div><div class="txt">'+esc(text)+'</div>'+(extra||"")+'</div>';
   $("#scroll").appendChild(el);
   $("#scroll").scrollTop=$("#scroll").scrollHeight;
+  if(role!=="env") driveShowTurn(role,text,R.__lastFlags||[]);
+  R.__lastFlags=null;
   paintSignals();
 }
 function addThinking(){
@@ -843,6 +1015,7 @@ async function submitAdvisor(text){
     R.m.bridgeAt=Math.round((Date.now()-R.startedAt)/1000);
     chips='<div class="flags">'+(hits.length?hits.map(function(h){return '<span class="chip bad">'+esc(h.label)+'</span>'}).join(""):"")+'<span class="chip acc">bridge attempt</span></div>';
   }
+  R.__lastFlags=hits.map(function(h){return h.label});
   addTurn("advisor",text,chips);
   checkDrill(text);
   const nA=R.turns.filter(function(t){return t.role==="advisor"}).length;
@@ -894,7 +1067,7 @@ async function endRun(reason){
   recomputeMetrics();
   R.result=reason==="accepted"?"Second conversation earned":reason==="lost"?"Lost the thread":reason==="timeout"?"Ran out of window":"Ended early";
   R.won=reason==="accepted";
-  go("score");
+  if(!DRIVE.on) go("score");
   $("#scoreBody").innerHTML='<div class="panel pad"><p class="eyebrow">Scoring</p><h2 style="margin-top:6px">Reading the tape…</h2>'
     +'<p class="lede" style="margin-top:8px">Seven categories, then the rewrite.</p>'
     +'<div style="margin-top:14px"><span class="thinking"><i></i><i></i><i></i></span></div></div>';
@@ -909,6 +1082,7 @@ async function endRun(reason){
   await saveRun(saved);
   renderScore(saved);
   renderRecent(); renderProgress(); applyAdaptive();
+  if(DRIVE.on) driveScored(saved);
 }
 
 function heuristicScores(){
@@ -981,6 +1155,88 @@ async function scoreRun(){
       rewriteBefore:o.rewriteBefore||"",rewriteAfter:o.rewriteAfter||"",
       reframe:o.reframe||"",bridge:o.bridge||R.scen.bridge,drill:o.drill||""}};
   }catch(e){ return fallback() }
+}
+
+/* ============================================================
+   DRIVE MODE
+   ============================================================ */
+const DRIVE={on:false,reps:0,totals:[]};
+function paintDrive(){
+  if(!DRIVE.on) return;
+  if(R){
+    const d=R.m.durationSec||0;
+    const c=$("#dClk");
+    c.textContent=Math.floor(d/60)+":"+String(d%60).padStart(2,"0");
+    c.className="clk"+(d>150?" bad":d>90?" warn":"");
+    $("#dMeter").style.width=clamp(R.interest,3,100)+"%";
+    $("#dMeter").style.background=R.interest>62?"#63B792":R.interest>32?"#D2707B":"#4A5058";
+  }
+  const st=$("#dStat");
+  if(Voice.speaking){ st.textContent="They're talking"; st.className="dstat"; }
+  else if(Voice.want&&Voice.listening){ st.textContent="Listening — go ahead"; st.className="dstat live"; }
+  else if(busy){ st.textContent="Thinking"; st.className="dstat"; }
+  else { st.textContent="Tap to talk"; st.className="dstat"; }
+}
+function driveShowTurn(role,text,flags){
+  if(!DRIVE.on) return;
+  $("#dHero").hidden=true; $("#dLive").hidden=false;
+  if(role==="prospect"){ $("#dSay").textContent=text; $("#dYou").hidden=true; $("#dFlags").innerHTML=""; }
+  else if(role==="advisor"){
+    $("#dYou").hidden=false; $("#dYou").textContent=text;
+    $("#dFlags").innerHTML=(flags||[]).map(function(f){return '<span class="dflag">'+esc(f)+'</span>'}).join("");
+  }
+}
+function driveStart(){
+  DRIVE.on=true; DRIVE.reps=0; DRIVE.totals=[];
+  $("#driveWrap").classList.add("on");
+  $("#dCtl").hidden=true; $("#dCtl2").hidden=false; $("#dTap").hidden=false;
+  keepAwake(true);
+  Voice.say("Drive mode. First scenario.",function(){ driveNext() });
+}
+function driveNext(){
+  if(!DRIVE.on) return;
+  randomize();
+  const cfg=currentConfig();
+  $("#dLbl").textContent=cfg.setting+" · "+cfg.who;
+  $("#dHero").hidden=true; $("#dLive").hidden=false;
+  $("#dSay").textContent=""; $("#dYou").hidden=true; $("#dFlags").innerHTML="";
+  newRun(cfg);
+}
+function driveEnd(){
+  DRIVE.on=false;
+  if(R&&R.live){ R.live=false; clearInterval(R.tick) }
+  Voice.stop(); Voice.shutUp(); keepAwake(false);
+  $("#driveWrap").classList.remove("on");
+  $("#dCtl").hidden=false; $("#dCtl2").hidden=true; $("#dTap").hidden=true;
+  $("#dHero").hidden=false; $("#dLive").hidden=true;
+  go("progress");
+}
+function spokenScore(run){
+  const cats=CATS.slice().sort(function(a,b){return run.scores[b[0]]-run.scores[a[0]]});
+  const best=cats[0], worst=cats[cats.length-1];
+  const c=run.coach||{};
+  const bits=[
+    run.total+" out of 70.",
+    run.won?"You earned the second conversation.":"You did not earn the second conversation.",
+    "Strongest: "+best[1]+", "+run.scores[best[0]]+".",
+    "Weakest: "+worst[1]+", "+run.scores[worst[0]]+"."
+  ];
+  if(c.worst) bits.push("Where you lost it: "+c.worst);
+  if(c.missed) bits.push("The question you missed: "+c.missed);
+  if(c.bridge) bits.push("The line to use: "+c.bridge);
+  bits.push("Next one.");
+  return bits.join(" ");
+}
+function driveScored(run){
+  DRIVE.reps++; DRIVE.totals.push(run.total);
+  $("#dHero").hidden=true;
+  $("#dSay").textContent=run.total+" / 70";
+  $("#dYou").hidden=false;
+  $("#dYou").textContent=(run.coach&&run.coach.worst)||run.result;
+  $("#dStat").textContent="Rep "+DRIVE.reps+" scored";
+  Voice.say(spokenScore(run),function(){
+    if(DRIVE.on) setTimeout(driveNext,900);
+  });
 }
 
 /* ============================================================
@@ -1232,6 +1488,63 @@ $("#typed").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preve
 $("#chkVoice").addEventListener("change",function(){ if(!this.checked){Voice.stop();Voice.shutUp()} });
 $("#libSearch").addEventListener("input",function(){ paintLib(this.value) });
 
+/* drive mode controls */
+$("#btnDrive").onclick=async function(){ await primeAudio(); driveStart() };
+$("#dGo").onclick=async function(){ await primeAudio(); driveStart() };
+$("#dEnd").onclick=function(){ driveEnd() };
+$("#dCut").onclick=function(){ Voice.shutUp(); Voice.start() };
+$("#dRep").onclick=function(){
+  const last=R&&R.turns.filter(function(t){return t.role==="prospect"}).pop();
+  if(last){ Voice.stop(); Voice.say(last.text,function(){ if(R&&R.live) Voice.start() }) }
+};
+$("#dSkip").onclick=function(){
+  if(R&&R.live){ R.live=false; clearInterval(R.tick) }
+  Voice.stop(); Voice.shutUp();
+  if(DRIVE.on) Voice.say("Skipping. Next one.",function(){ driveNext() });
+};
+$("#dTap").onclick=function(){
+  if(Voice.want){ Voice.flush() }
+  else { Voice.shutUp(); Voice.start() }
+  $("#dTap").classList.toggle("hot",Voice.want);
+  $("#dTap").textContent=Voice.want?"Tap when you're done":"Tap to talk";
+};
+
+/* API key sheet */
+function paintKeyState(msg,cls){
+  const k=getKey();
+  const base=k?'<b class="ok">Key saved on this device.</b>':'<b class="no">No key yet — running the scripted prospect.</b>';
+  $("#keyState").innerHTML=msg?('<b class="'+(cls||"")+'">'+esc(msg)+'</b>'):base;
+  $("#keyInput").value="";
+  $("#keyInput").placeholder=k?"sk-ant-…  (saved)":"sk-ant-...";
+}
+$("#btnSettings").onclick=function(){ $("#keySheet").classList.add("on"); paintKeyState() };
+$("#keyClose").onclick=function(){ $("#keySheet").classList.remove("on") };
+$("#keySheet").onclick=function(e){ if(e.target===this) this.classList.remove("on") };
+$("#keySave").onclick=async function(){
+  const v=$("#keyInput").value.trim();
+  if(!v){ paintKeyState("Paste a key first.","no"); return }
+  setKey(v);
+  paintKeyState("Checking…","");
+  try{
+    const r=await fetch("/api/key",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:v,persist:$("#keyShare").checked})});
+    const j=await r.json();
+    if(j.ok){
+      SAMPLE=serverSampler(); PROVIDER="anthropic";
+      paintKeyState("Key works — "+(j.model||"connected")+". The live prospect is on.","ok");
+      $("#micNote").textContent="";
+    } else {
+      paintKeyState(j.message||"That key was rejected.","no");
+      setKey("");
+    }
+  }catch(e){ paintKeyState("Could not reach the server to check it.","no") }
+};
+$("#keyClear").onclick=async function(){
+  setKey("");
+  try{ await fetch("/api/key",{method:"DELETE"}) }catch(e){}
+  paintKeyState("Key removed.","no");
+};
+
 async function primeAudio(){
   try{ if(window.speechSynthesis){ const u=new SpeechSynthesisUtterance(" "); u.volume=0; window.speechSynthesis.speak(u) } }catch(e){}
   if(!Voice.supported()){ Voice.blocked=true; return }
@@ -1261,7 +1574,7 @@ function looseJSON(t){
 }
 function serverSampler(){
   return { json: async function(input,opts){
-    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},
+    const r=await fetch("/api/chat",{method:"POST",headers:chatHeaders(),
       body:JSON.stringify({input:input,tier:(opts&&opts.modelTier)==="complex"?"complex":"default"})});
     if(!r.ok) throw new Error("chat "+r.status);
     const j=await r.json();
@@ -1271,19 +1584,26 @@ function serverSampler(){
 (async function boot(){
   let note="";
   try{
-    const h=await fetch("/api/health",{cache:"no-store"});
+    const h=await fetch("/api/health",{headers:chatHeaders(),cache:"no-store"});
     if(h.ok){
       const j=await h.json();
-      SERVER=true;
-      if(j.ai){ SAMPLE=serverSampler(); note=""; }
-      else note="Server has no ANTHROPIC_API_KEY — running the built-in prospect engine.";
+      SERVER=true; PROVIDER=j.provider||"none";
+      if(j.ai||getKey()){ SAMPLE=serverSampler(); }
+      else note="needkey";
     }
   }catch(e){}
   if(!SAMPLE){
     try{ SAMPLE=await claude.use("sample") }catch(e){ SAMPLE=null }
   }
-  if(!SAMPLE&&!note) note="Running on the built-in prospect engine. Scenario library and scoring still work.";
-  if(note) $("#micNote").textContent=note;
+  if(note==="needkey"){
+    $("#micNote").innerHTML='No API key yet \u2014 the prospect is scripted until you add one.';
+    const b=document.createElement("button");
+    b.className="btn"; b.textContent="Add API key"; b.style.marginLeft="2px";
+    b.onclick=function(){ $("#btnSettings").click() };
+    $("#micNote").parentNode.appendChild(b);
+  } else if(!SAMPLE){
+    $("#micNote").textContent="Running on the built-in prospect engine. Scenario library and scoring still work.";
+  }
   loadRuns();
 })();
 </script>
