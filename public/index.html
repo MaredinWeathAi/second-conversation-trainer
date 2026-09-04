@@ -334,6 +334,7 @@ tr.hot td{background:var(--bad-soft)}
     <button data-go="progress">Progress</button>
     <button data-go="library">Library</button>
     <button id="btnSettings" title="API key">Key</button>
+    <button id="btnLock" title="Lock this device">Lock</button>
   </nav>
 </header>
 
@@ -1710,6 +1711,11 @@ function paintKeyState(msg,cls){
   $("#keyInput").placeholder=k?"sk-ant-…  (saved)":"sk-ant-...";
 }
 $("#btnSettings").onclick=function(){ $("#keySheet").classList.add("on"); paintKeyState() };
+$("#btnLock").onclick=async function(){
+  if(!confirm("Lock this device? You will need the passcode again.")) return;
+  try{ await fetch("/api/logout",{method:"POST"}) }catch(e){}
+  location.reload();
+};
 $("#keyClose").onclick=function(){ $("#keySheet").classList.remove("on") };
 $("#keySheet").onclick=function(e){ if(e.target===this) this.classList.remove("on") };
 $("#keySave").onclick=async function(){
@@ -1768,6 +1774,7 @@ function serverSampler(){
   return { json: async function(input,opts){
     const r=await fetch("/api/chat",{method:"POST",headers:chatHeaders(),
       body:JSON.stringify({input:input,tier:(opts&&opts.modelTier)==="complex"?"complex":"default"})});
+    if(r.status===401){ location.reload(); throw new Error("session expired") }
     if(!r.ok) throw new Error("chat "+r.status);
     const j=await r.json();
     return looseJSON(j.text);
@@ -1777,6 +1784,7 @@ function serverSampler(){
   let note="";
   try{
     const h=await fetch("/api/health",{headers:chatHeaders(),cache:"no-store"});
+    if(h.status===401){ location.reload(); return }
     if(h.ok){
       const j=await h.json();
       SERVER=true; PROVIDER=j.provider||"none";

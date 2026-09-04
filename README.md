@@ -15,13 +15,37 @@ casual social conversation to a qualified second meeting — not a sales script.
 |---|---|---|
 | `ANTHROPIC_API_KEY` | optional | You can instead paste a key into the app (Key button). Without either, the app runs a built-in scripted prospect. |
 | `ANTHROPIC_MODEL` | no | Overrides auto-detection. |
+| `APP_PASSCODE` | **yes** | Without it the server logs a warning and runs unprotected. |
+| `SESSION_SECRET` | strongly advised | Without it sessions reset on every deploy. |
 | `PORT` | no | Railway sets this. |
 | `DATA_DIR` | no | Where run history JSON is kept. Defaults to `./data`. |
+
+## Security
+
+The whole app is behind a passcode. Nothing — not the page, not an asset, not an
+API route — is served without a valid session, except `GET /api/ping`.
+
+- `APP_PASSCODE` gates everything. Compared in constant time, 10 attempts per IP
+  per 15 minutes.
+- Session is an HMAC-signed cookie (`HttpOnly; Secure; SameSite=Lax`, 30 days)
+  keyed on `SESSION_SECRET`. Set that variable so sessions survive a redeploy.
+- Rate limits per IP: 60 model calls / 10 min, 600 / day, 12 key attempts / hour.
+- Request caps: 256 KB body, 60 turns, 200 KB of prompt text.
+- Headers: CSP (`connect-src 'self'` blocks exfiltration of a stored key),
+  HSTS, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`,
+  `Referrer-Policy: no-referrer`, `Permissions-Policy: microphone=(self)`.
+  `x-powered-by` removed.
+- API keys are redacted from every log line and error returned to the browser.
+- The key file and run store are written `0600` inside a `0700` directory.
+- When `ANTHROPIC_API_KEY` is set as an env var, the in-app key field is disabled
+  so a session cannot overwrite it.
 
 ## Endpoints
 
 - `GET  /api/health` — `{ ok, ai, model }`. `ai:false` means no key is configured.
 - `POST /api/chat` — `{ input, tier }` -> `{ text }`. Server-side proxy to the Anthropic Messages API.
+- `GET  /api/ping` — unauthenticated liveness. Leaks nothing.
+- `POST /api/login` / `POST /api/logout` — session.
 - `POST /api/key` — verify a key pasted in the app; `{persist:true}` keeps it server-side for other devices.
 - `DELETE /api/key` — forget the saved key.
 - `GET  /api/runs` / `POST /api/runs` — run history (best-effort file store; the browser also keeps its own copy).
