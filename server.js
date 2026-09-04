@@ -51,6 +51,20 @@ function authed(req) { return !PASSCODE || valid(cookies(req)[COOKIE]); }
 
 /* ---------------- rate limiting ---------------- */
 const buckets = new Map();
+/* Global failed-login counter: per-IP limits do nothing against a botnet, so
+   failures anywhere on the server add a progressive delay for everyone. */
+let globalFails = 0, globalFailWindow = 0;
+function noteFail() {
+  const now = Date.now();
+  if (now > globalFailWindow) { globalFails = 0; globalFailWindow = now + 15 * 60000; }
+  globalFails++;
+}
+function failDelayMs() {
+  if (Date.now() > globalFailWindow) return 0;
+  if (globalFails < 5) return 0;
+  return Math.min(8000, 250 * Math.pow(2, Math.min(5, globalFails - 5)));
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of buckets) if (now > v.reset) buckets.delete(k);
@@ -155,18 +169,23 @@ app.use((req, res, next) => {
 /* unauthenticated liveness only — leaks nothing */
 app.get("/api/ping", (req, res) => res.json({ ok: true }));
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
   const ip = ipOf(req);
   const l = limit("login:" + ip, 10, 15 * 60000);
   if (!l.ok) return res.status(429).json({ ok: false, message: "Too many attempts. Wait " + l.retryAfter + "s." });
   if (!PASSCODE) return res.status(503).json({ ok: false, message: "APP_PASSCODE is not configured on the server." });
+  const d = failDelayMs();
+  if (d) await sleep(d);
   const given = String((req.body && req.body.passcode) || "");
   const a = crypto.createHash("sha256").update(given).digest();
   const b = crypto.createHash("sha256").update(PASSCODE).digest();
   if (!crypto.timingSafeEqual(a, b)) {
-    console.warn("[auth] failed login from %s (%d)", ip, l.n);
+    noteFail();
+    console.warn("[auth] failed login from %s (ip %d, global %d)", ip, l.n, globalFails);
     return res.status(401).json({ ok: false, message: "Wrong passcode." });
   }
+  buckets.delete("login:" + ip);
+  globalFails = 0;
   res.setHeader("Set-Cookie", COOKIE + "=" + mint() + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + SESSION_DAYS * 86400);
   res.json({ ok: true });
 });
