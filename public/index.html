@@ -677,6 +677,9 @@ let SAMPLE=null,SERVER=false,HAS_TTS=false,NEEDKEY=false,RUNS=[],R=null,LAST=nul
 const KEYLS="sct.key.v1";
 const getKey=()=>{try{return localStorage.getItem(KEYLS)||""}catch(e){return""}};
 const setKey=v=>{try{v?localStorage.setItem(KEYLS,v):localStorage.removeItem(KEYLS)}catch(e){}};
+const TKEYLS="sct.ttskey.v1";
+const getTtsKey=()=>{try{return localStorage.getItem(TKEYLS)||""}catch(e){return""}};
+const setTtsKey=v=>{try{v?localStorage.setItem(TKEYLS,v):localStorage.removeItem(TKEYLS)}catch(e){}};
 const chatHeaders=()=>{const h={"content-type":"application/json"},k=getKey();if(k)h["x-user-key"]=k;return h};
 const pref=(k,d)=>{try{return localStorage.getItem("sct."+k)||d}catch(e){return d}};
 const setPref=(k,v)=>{try{localStorage.setItem("sct."+k,v)}catch(e){}};
@@ -1531,7 +1534,7 @@ on("#ttsSave","click",async function(){
   st.textContent="Checking…";
   try{ const r=await fetch("/api/ttskey",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:v})});
     const j=await r.json(); $("#ttsIn").value="";
-    if(j.ok){ HAS_TTS=true; TTS.tripped=false; setPref("tts","auto"); if($("#selTts"))$("#selTts").value="auto"; paintVoice() }
+    if(j.ok){ HAS_TTS=true; TTS.tripped=false; setTtsKey(v); setPref("tts","auto"); if($("#selTts"))$("#selTts").value="auto"; paintVoice() }
     else st.textContent=j.message||"Rejected.";
   }catch(e){ st.textContent="Could not reach the server." }
 });
@@ -1554,9 +1557,12 @@ renderLibrary();
     if(h.status===401){location.reload();return}
     if(h.ok){ const j=await h.json(); SERVER=true; HAS_TTS=!!j.tts;
       if(j.ai||getKey()) SAMPLE=sampler(); else NEEDKEY=true;
-      if(!j.ai&&getKey()){ try{ const k=await fetch("/api/key",{method:"POST",
+      if(!j.server_ai&&getKey()){ try{ const k=await fetch("/api/key",{method:"POST",
         headers:{"content-type":"application/json"},body:JSON.stringify({key:getKey(),persist:true})});
         if((await k.json()).ok){ SAMPLE=sampler(); NEEDKEY=false } }catch(e){} }
+      if(!j.tts&&getTtsKey()){ try{ const t=await fetch("/api/ttskey",{method:"POST",
+        headers:{"content-type":"application/json"},body:JSON.stringify({key:getTtsKey()})});
+        if((await t.json()).ok){ HAS_TTS=true; TTS.tripped=false } else setTtsKey("") }catch(e){} }
     }
   }catch(e){}
   Voice.voices=speechSynthesis?speechSynthesis.getVoices()||[]:[];

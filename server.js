@@ -272,7 +272,7 @@ app.use((req, res, next) => {
 
 app.get("/api/health", (req, res) => {
   const withKey = !!reqKey(req);
-  res.json({ ok: true, ai: PROVIDER !== "none" || withKey, provider: withKey && PROVIDER !== "anthropic" ? "anthropic-user" : PROVIDER, model: MODELS.default || null, tts: !!TTS_KEY });
+  res.json({ ok: true, ai: PROVIDER !== "none" || withKey, server_ai: PROVIDER !== "none", provider: withKey && PROVIDER !== "anthropic" ? "anthropic-user" : PROVIDER, model: MODELS.default || null, tts: !!TTS_KEY });
 });
 function reqKey(req) {
   const h = req.get("x-user-key");
