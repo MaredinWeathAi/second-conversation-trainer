@@ -204,6 +204,8 @@ tr.hot td{background:var(--bad-soft)}
 #dLive{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;text-align:center}
 .dstat.live{color:#7BC08F}
 .dstat.busy{color:#C9903F}
+.hint2{color:#7E848C;font-size:13px;margin:6px 0 0}
+.btn.danger{color:var(--bad)}
 .dhint{font-family:var(--fm);font-size:11.5px;letter-spacing:.06em;color:#6A7079;text-align:center;margin:10px 0 0}
 .head1{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:14px 0}
 .head1 h2{margin:6px 0 6px;font-size:26px}
@@ -342,6 +344,10 @@ details.fold[open]>summary:before{content:"▾ "}
     <option value="men">Men only</option><option value="women">Women only</option></select></div>
   <div class="fld"><label for="selScore">Scoring depth</label><select id="selScore">
     <option value="default">Standard</option><option value="complex">Deep — about 2.5x the scoring cost</option></select></div>
+  <h3 style="margin-top:24px">History</h3>
+  <p class="hint2" id="histStat"></p>
+  <button class="btn" id="exportRuns" style="margin-top:10px;width:100%">Download every rep</button>
+  <button class="btn ghost danger" id="wipeRuns" style="margin-top:10px;width:100%">Start the record over</button>
   <button class="btn ghost" id="lock" style="margin-top:20px;width:100%">Lock this device</button>
 </div></div>
 
@@ -1927,7 +1933,7 @@ function loadPrefs(){
 }
 on("#start","click",()=>primeAudio().then(()=>{ if(isPhone())driveOn(); startRun(null,null) }));
 on("#pick","click",()=>{ renderPicker(); $("#pickSheet").classList.add("on") });
-on("#gear","click",()=>{ $("#setSheet").classList.add("on"); paintKey(); paintVoice() });
+on("#gear","click",()=>{ $("#setSheet").classList.add("on"); paintKey(); paintVoice(); paintHist() });
 $$("[data-close]").forEach(b=>b.onclick=()=>$$(".sheet").forEach(s=>s.classList.remove("on")));
 $$(".sheet").forEach(sh=>sh.addEventListener("click",e=>{ if(e.target===sh) sh.classList.remove("on") }));
 $$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
@@ -1979,6 +1985,18 @@ on("#preview","click",()=>{
   Voice.say(woman?"Honestly? My CPA handles most of it. But go ahead, you've got two minutes."
                  :"Yeah, no, I've got a guy for that. Been with him since oh-nine. Why, what do you do?",paintVoice);
 });
+on("#exportRuns","click",()=>{ window.open("/api/export","_blank") });
+on("#wipeRuns","click",async()=>{
+  if(!confirm("Delete every stored rep and start the record from zero?\nThe server keeps a dated backup file; this app will show nothing.")) return;
+  const st=$("#histStat"); st.textContent="Clearing…";
+  try{ await fetch("/api/runs/reset",{method:"POST"}) }catch(e){}
+  try{ localStorage.removeItem(LS) }catch(e){}
+  Object.keys(localStorage).filter(k=>k.indexOf("sct.spend.")===0).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  RUNS=[]; renderHome(); renderProgress(); paintHist();
+});
+function paintHist(){ const st=$("#histStat"); if(!st) return;
+  const n=RUNS.length, s=RUNS.filter(r=>r.scoredBy==="model").length;
+  st.textContent=n?(n+" reps stored, "+s+" model-scored."):"No reps stored yet."; }
 on("#lock","click",async()=>{ if(!confirm("Lock this device?"))return;
   try{await fetch("/api/logout",{method:"POST"})}catch(e){} location.reload() });
 

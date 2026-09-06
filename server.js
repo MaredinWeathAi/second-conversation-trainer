@@ -474,6 +474,18 @@ app.get("/api/export", (req, res) => {
   res.setHeader("content-disposition", 'attachment; filename="sct-runs-' + new Date().toISOString().slice(0, 10) + '.json"');
   res.json({ exported: new Date().toISOString(), count: rows.length, runs: rows });
 });
+/* Owner-only reset, so a baseline can be started clean (or a demo rep removed).
+   The log is renamed with a timestamp rather than unlinked — nothing is destroyed. */
+app.post("/api/runs/reset", (req, res) => {
+  try {
+    if (fs.existsSync(RUNS_LOG)) {
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      fs.renameSync(RUNS_LOG, RUNS_LOG + "." + stamp + ".bak");
+    }
+    try { fs.unlinkSync(RUNS_FILE); } catch (e) {}
+    res.json({ ok: true });
+  } catch (e) { console.error("[runs] reset", redact(e.message)); res.status(500).json({ ok: false }); }
+});
 app.post("/api/runs", (req, res) => {
   const run = req.body && req.body.run;
   if (!run || typeof run.id !== "string" || run.id.length > 64) return res.status(400).json({ error: "bad_run" });

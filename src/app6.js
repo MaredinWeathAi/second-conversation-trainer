@@ -21,7 +21,7 @@ function loadPrefs(){
 }
 on("#start","click",()=>primeAudio().then(()=>{ if(isPhone())driveOn(); startRun(null,null) }));
 on("#pick","click",()=>{ renderPicker(); $("#pickSheet").classList.add("on") });
-on("#gear","click",()=>{ $("#setSheet").classList.add("on"); paintKey(); paintVoice() });
+on("#gear","click",()=>{ $("#setSheet").classList.add("on"); paintKey(); paintVoice(); paintHist() });
 $$("[data-close]").forEach(b=>b.onclick=()=>$$(".sheet").forEach(s=>s.classList.remove("on")));
 $$(".sheet").forEach(sh=>sh.addEventListener("click",e=>{ if(e.target===sh) sh.classList.remove("on") }));
 $$("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
@@ -73,6 +73,18 @@ on("#preview","click",()=>{
   Voice.say(woman?"Honestly? My CPA handles most of it. But go ahead, you've got two minutes."
                  :"Yeah, no, I've got a guy for that. Been with him since oh-nine. Why, what do you do?",paintVoice);
 });
+on("#exportRuns","click",()=>{ window.open("/api/export","_blank") });
+on("#wipeRuns","click",async()=>{
+  if(!confirm("Delete every stored rep and start the record from zero?\nThe server keeps a dated backup file; this app will show nothing.")) return;
+  const st=$("#histStat"); st.textContent="Clearing…";
+  try{ await fetch("/api/runs/reset",{method:"POST"}) }catch(e){}
+  try{ localStorage.removeItem(LS) }catch(e){}
+  Object.keys(localStorage).filter(k=>k.indexOf("sct.spend.")===0).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  RUNS=[]; renderHome(); renderProgress(); paintHist();
+});
+function paintHist(){ const st=$("#histStat"); if(!st) return;
+  const n=RUNS.length, s=RUNS.filter(r=>r.scoredBy==="model").length;
+  st.textContent=n?(n+" reps stored, "+s+" model-scored."):"No reps stored yet."; }
 on("#lock","click",async()=>{ if(!confirm("Lock this device?"))return;
   try{await fetch("/api/logout",{method:"POST"})}catch(e){} location.reload() });
 
