@@ -20,7 +20,7 @@ const COOKIE = "sct_s";
 let KEY = process.env.ANTHROPIC_API_KEY || "";
 let TTS_KEY = process.env.OPENAI_API_KEY || "";
 const TTS_KEY_FILE = () => path.join(DATA_DIR, "ttskey");
-const TTS_VOICE = { m: process.env.TTS_VOICE_M || "cedar", f: process.env.TTS_VOICE_F || "marin" };
+const TTS_VOICE = { m: process.env.TTS_VOICE_M || "cedar", f: process.env.TTS_VOICE_F || "marin", c: process.env.TTS_VOICE_C || "ash" };
 const KEY_FROM_ENV = !!KEY;
 const OLLAMA_URL = (process.env.OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
 let PROVIDER = "none";
@@ -238,6 +238,11 @@ app.post("/api/login", async (req, res) => {
      fat-fingered PIN on a shared cellular IP never locks the owner out. */
   const l = limit("login:" + (known ? "k:" : "") + ip, known ? 60 : 10, 15 * 60000);
   if (!l.ok) return res.status(429).json({ ok: false, message: "Too many attempts. Wait " + l.retryAfter + "s." });
+  /* Known-device is a convenience, not a bypass: nobody fat-fingers a PIN 120 times a day. */
+  if (known) {
+    const kd = limit("logind:" + String(cookies(req)[DEVICE_COOKIE] || "").slice(0, 32), 120, 24 * 3600000);
+    if (!kd.ok) return res.status(429).json({ ok: false, message: "Too many attempts on this device today." });
+  }
   await sleep(300 + Math.floor(Math.random() * 200));
   let given = String((req.body && req.body.passcode) || "").trim();
   /* A saved password, a stray space or a keyboard's smart punctuation should not cost
@@ -270,6 +275,7 @@ app.use((req, res, next) => {
   return res.status(401).type("html").send(LOGIN_PAGE);
 });
 
+app.get("/api/export.ok", (req, res) => res.json({ ok: true }));
 app.get("/api/health", (req, res) => {
   const withKey = !!reqKey(req);
   res.json({ ok: true, ai: PROVIDER !== "none" || withKey, server_ai: PROVIDER !== "none", provider: withKey && PROVIDER !== "anthropic" ? "anthropic-user" : PROVIDER, model: MODELS.default || null, tts: !!TTS_KEY });
@@ -292,7 +298,7 @@ app.post("/api/key", async (req, res) => {
     const fast = newest(/sonnet/i) || newest(/haiku/i) || ids[0];
     if (req.body && req.body.persist) {
       KEY = key; PROVIDER = "anthropic";
-      MODELS = { default: fast, complex: newest(/opus/i) || fast };
+      MODELS = { default: fast, complex: newest(/opus/i) || fast, quick: newest(/haiku/i) || fast };
       try {
         fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
         fs.writeFileSync(KEY_FILE, key, { mode: 0o600 });
@@ -318,7 +324,7 @@ app.post("/api/ttskey", async (req, res) => {
   const prev = TTS_KEY;
   TTS_KEY = key;
   try {
-    await openai("/v1/audio/speech", "POST", { model: "gpt-4o-mini-tts", voice: TTS_VOICE.m, input: "Testing.", response_format: "wav" }, true);
+    await openai("/v1/audio/speech", "POST", { model: "gpt-4o-mini-tts", voice: TTS_VOICE.m, input: "Testing.", response_format: "mp3" }, true);
     try { fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 }); fs.writeFileSync(TTS_KEY_FILE(), key, { mode: 0o600 }); } catch (e) {}
     res.json({ ok: true });
   } catch (e) {
@@ -333,12 +339,16 @@ app.post("/api/tts", async (req, res) => {
   if (!l.ok) return res.status(429).json({ error: "rate_limited" });
   const text = String((req.body && req.body.text) || "").slice(0, 600);
   if (!text.trim()) return res.status(400).json({ error: "bad_input" });
-  const voice = (req.body && req.body.woman) ? TTS_VOICE.f : TTS_VOICE.m;
+  const coach = (req.body && req.body.role) === "coach";
+  const voice = coach ? TTS_VOICE.c : ((req.body && req.body.woman) ? TTS_VOICE.f : TTS_VOICE.m);
   const instructions = String((req.body && req.body.instructions) || "").slice(0, 1200);
   try {
     const buf = await openai("/v1/audio/speech", "POST",
-      { model: "gpt-4o-mini-tts", voice, input: text, instructions, response_format: "wav" }, true);
-    res.setHeader("Content-Type", "audio/wav");
+      { model: "gpt-4o-mini-tts", voice, input: text, instructions, response_format: "mp3" }, true);
+    /* ~13 characters a second of speech at $0.015 a minute. The client meters this;
+       speech was previously invisible in his spend and it is the largest single line. */
+    res.setHeader("x-cost-est", String((text.length / 13 / 60) * 0.015));
+    res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Content-Length", buf.length);
     res.end(buf);
   } catch (e) {
@@ -353,6 +363,9 @@ app.post("/api/chat", async (req, res) => {
   if (!burst.ok) return res.status(429).json({ error: "rate_limited", message: "Slow down for " + burst.retryAfter + "s." });
   const daily = limit("chatd:" + ip, 600, 24 * 3600000);
   if (!daily.ok) return res.status(429).json({ error: "rate_limited", message: "Daily call limit reached." });
+  /* One user, one phone. A global ceiling caps the damage a leaked session can do. */
+  const globalDay = limit("chatd:all", 900, 24 * 3600000);
+  if (!globalDay.ok) return res.status(429).json({ error: "rate_limited", message: "Daily limit reached for this app." });
 
   const userKey = reqKey(req);
   if (PROVIDER === "none" && !userKey) return res.status(503).json({ error: "no_provider", message: "No API key yet. Add one with the Key button." });
@@ -361,12 +374,14 @@ app.post("/api/chat", async (req, res) => {
   const tierIn = (req.body && req.body.tier) || "default";
   const tier = (tierIn === "complex" || tierIn === "quick") ? tierIn : "default";
   const cachePrefix = !!(req.body && req.body.cachePrefix);
+  const tRaw = req.body && req.body.temperature;
+  const temp = (typeof tRaw === "number" && tRaw >= 0 && tRaw <= 1) ? tRaw : 1;
   let messages = typeof input === "string" ? [{ role: "user", content: input }]
     : Array.isArray(input) ? input.filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string") : null;
   if (!messages || !messages.length) return res.status(400).json({ error: "bad_input" });
-  if (messages.length > 60) return res.status(400).json({ error: "too_many_turns" });
+  if (messages.length > 40) return res.status(400).json({ error: "too_many_turns" });
   const bytes = messages.reduce((n, m) => n + Buffer.byteLength(m.content), 0);
-  if (bytes > 200000) return res.status(413).json({ error: "too_large" });
+  if (bytes > 60000) return res.status(413).json({ error: "too_large" });
 
   try {
     let text, model, usage = null;
@@ -380,7 +395,8 @@ app.post("/api/chat", async (req, res) => {
       }
       const out = await anthropic("/v1/messages", "POST", {
         model: MODELS[tier] || MODELS.default || "claude-sonnet-4-5",
-        max_tokens: tier === "complex" ? 2000 : (tier === "quick" ? 400 : 700), messages: msgs
+        max_tokens: tier === "complex" ? 2000 : (tier === "quick" ? 400 : 700), messages: msgs,
+        temperature: temp
       }, userKey);
       text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
       model = out.model;
@@ -399,23 +415,51 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-function readRuns() { try { return JSON.parse(fs.readFileSync(RUNS_FILE, "utf8")); } catch (e) { return []; } }
-function writeRuns(rows) {
+/* Append-only. A whole-file rewrite on every save meant one crash mid-write
+   left invalid JSON and the next save replaced six weeks with a single run. */
+const RUNS_LOG = path.join(DATA_DIR, "runs.jsonl");
+function readRuns(limit) {
+  let rows = [];
+  try {
+    const txt = fs.readFileSync(RUNS_LOG, "utf8");
+    const seen = new Map();
+    txt.split("\n").forEach((line) => {
+      if (!line.trim()) return;
+      try { const r = JSON.parse(line); if (r && r.id) seen.set(r.id, r); } catch (e) {}
+    });
+    rows = [...seen.values()];
+  } catch (e) {
+    try { rows = JSON.parse(fs.readFileSync(RUNS_FILE, "utf8")) || []; } catch (e2) { rows = []; }
+    if (rows.length) { try {
+      fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+      fs.writeFileSync(RUNS_LOG, rows.map((r) => JSON.stringify(r)).join("\n") + "\n", { mode: 0o600 });
+      console.log("[runs] migrated %d runs to the append log", rows.length);
+    } catch (e3) {} }
+  }
+  rows.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return limit ? rows.slice(0, limit) : rows;
+}
+function appendRun(run) {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
-    fs.writeFileSync(RUNS_FILE, JSON.stringify(rows.slice(0, 500)), { mode: 0o600 });
+    fs.appendFileSync(RUNS_LOG, JSON.stringify(run) + "\n", { mode: 0o600 });
     return true;
   } catch (e) { console.error("[runs]", redact(e.message)); return false; }
 }
-app.get("/api/runs", (req, res) => res.json({ runs: readRuns() }));
+app.get("/api/runs", (req, res) => {
+  const n = Math.min(2000, Math.max(1, parseInt(req.query.limit, 10) || 600));
+  res.json({ runs: readRuns(n) });
+});
+app.get("/api/export", (req, res) => {
+  const rows = readRuns();
+  res.setHeader("content-disposition", 'attachment; filename="sct-runs-' + new Date().toISOString().slice(0, 10) + '.json"');
+  res.json({ exported: new Date().toISOString(), count: rows.length, runs: rows });
+});
 app.post("/api/runs", (req, res) => {
   const run = req.body && req.body.run;
   if (!run || typeof run.id !== "string" || run.id.length > 64) return res.status(400).json({ error: "bad_run" });
   if (Buffer.byteLength(JSON.stringify(run)) > 200000) return res.status(413).json({ error: "too_large" });
-  const rows = readRuns().filter((r) => r.id !== run.id);
-  rows.unshift(run);
-  rows.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  res.json({ ok: writeRuns(rows), count: rows.length });
+  res.json({ ok: appendRun(run) });
 });
 
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 0, etag: true, dotfiles: "ignore" }));
