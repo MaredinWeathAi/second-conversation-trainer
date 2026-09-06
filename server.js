@@ -397,13 +397,29 @@ app.post("/api/chat", async (req, res) => {
         msgs = messages.slice();
         msgs[0] = { role: msgs[0].role, content: [{ type: "text", text: msgs[0].content, cache_control: { type: "ephemeral" } }] };
       }
-      const out = await anthropic("/v1/messages", "POST", {
+      /* Current Sonnet thinks by default. On the scoring prompt it spent the entire
+         token budget reasoning and returned no text at all, which read as a scoring
+         failure and quietly fell back to the heuristic. We want the answer, not the
+         reasoning — and we do not want to pay output rates for it. */
+      const body = {
         model: MODELS[tier] || MODELS.default || "claude-sonnet-4-5",
-        max_tokens: maxTok, messages: msgs
-      }, userKey);
+        max_tokens: maxTok, messages: msgs, thinking: { type: "disabled" }
+      };
+      let out;
+      try { out = await anthropic("/v1/messages", "POST", body, userKey); }
+      catch (e) {
+        if (e.status === 400 && /thinking/i.test(String(e.message || ""))) {
+          delete body.thinking;
+          out = await anthropic("/v1/messages", "POST", body, userKey);
+        } else throw e;
+      }
       text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
       model = out.model;
       usage = out.usage || null;
+      if (!text) {
+        console.error("[chat] empty text, stop=%s out=%s", out.stop_reason, (out.usage || {}).output_tokens);
+        return res.status(502).json({ error: "empty_output", stop: out.stop_reason || null });
+      }
     } else {
       const out = await ollama("/api/chat", "POST", {
         model: MODELS[tier] || MODELS.default, messages, stream: false, format: "json",
