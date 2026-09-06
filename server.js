@@ -374,8 +374,12 @@ app.post("/api/chat", async (req, res) => {
   const tierIn = (req.body && req.body.tier) || "default";
   const tier = (tierIn === "complex" || tierIn === "quick") ? tierIn : "default";
   const cachePrefix = !!(req.body && req.body.cachePrefix);
-  const tRaw = req.body && req.body.temperature;
-  const temp = (typeof tRaw === "number" && tRaw >= 0 && tRaw <= 1) ? tRaw : 1;
+  /* No temperature: it is deprecated on the current Sonnet and 502s the call.
+     A scoring pass needs far more room than a prospect line, so the cap is per-call. */
+  const mtRaw = req.body && req.body.maxTokens;
+  const maxTok = (typeof mtRaw === "number" && mtRaw > 0)
+    ? Math.min(4000, Math.round(mtRaw))
+    : (tier === "complex" ? 2000 : (tier === "quick" ? 400 : 900));
   let messages = typeof input === "string" ? [{ role: "user", content: input }]
     : Array.isArray(input) ? input.filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string") : null;
   if (!messages || !messages.length) return res.status(400).json({ error: "bad_input" });
@@ -395,8 +399,7 @@ app.post("/api/chat", async (req, res) => {
       }
       const out = await anthropic("/v1/messages", "POST", {
         model: MODELS[tier] || MODELS.default || "claude-sonnet-4-5",
-        max_tokens: tier === "complex" ? 2000 : (tier === "quick" ? 400 : 700), messages: msgs,
-        temperature: temp
+        max_tokens: maxTok, messages: msgs
       }, userKey);
       text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
       model = out.model;

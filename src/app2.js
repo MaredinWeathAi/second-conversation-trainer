@@ -62,8 +62,13 @@ async function prospectTurn(first){
                cue:String(out.scene.cue||run.trigger.cue)};
   }
   if(out.opened) run.opened=true;
+  /* They sometimes hand over a number nobody asked for. Capture is his move to make. */
+  const lastAdv=run.turns.slice().reverse().find(t=>t.role==="advisor");
+  const askedForIt=!!(lastAdv&&hitAny(CAPTURE,lastAdv.text));
   const newGoals=[];
-  (out.goals||[]).forEach(n=>{n=Number(n); if(n>=1&&n<=6&&run.opened&&!run.goals.includes(n)){run.goals.push(n);newGoals.push(n)}});
+  (out.goals||[]).forEach(n=>{n=Number(n);
+    if(n===6&&!askedForIt) return;
+    if(n>=1&&n<=6&&run.opened&&!run.goals.includes(n)){run.goals.push(n);newGoals.push(n)}});
   run.goals.sort();
   if(newGoals.includes(5)&&!run.bridgeTurn) run.bridgeTurn=run.m.turns;
   run.lastFlag=out.flag||null;
@@ -162,7 +167,7 @@ async function scoreRun(){
       drill:"Run it again. You may not say anything that is not a question until they resonate.",verdict:""});
   if(!SAMPLE) return fb();
   try{
-    const o=await SAMPLE.json(scoringPrompt(),{tier:pref("scoretier","default"),temperature:0,retry:2});
+    const o=await SAMPLE.json(scoringPrompt(),{tier:pref("scoretier","default"),maxTokens:1800,retry:2,timeout:60000});
     const sc={},why={};
     PHASE.forEach(p=>{
       const row=(o.scores||{})[p[0]]||{};

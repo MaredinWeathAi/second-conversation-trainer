@@ -91,7 +91,7 @@ const sampler=()=>({json:async(input,opt)=>{
     try{
       const r=await fetch("/api/chat",{method:"POST",headers:chatHeaders(),signal:ac.signal,
         body:JSON.stringify({input,tier:o.tier||"default",cachePrefix:!!o.cachePrefix,
-          temperature:o.temperature})});
+          maxTokens:o.maxTokens})});
       clearTimeout(timer);
       if(r.status===401){location.reload();throw new Error("session")}
       if(r.status===429||r.status>=500){ lastErr=new Error("chat "+r.status);

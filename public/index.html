@@ -675,7 +675,7 @@ T.traps.map(function(x){return '  "'+x+'"'}).join("\n"),
 'If ACCEPT ALLOWED is no: deflect. If it came early it feels like a pitch — "maybe, yeah, send me something" or "I\'m pretty covered, honestly". If he has been solving at you for several turns it feels like the free consultation already happened — "Yeah, I think I\'ve got what I need, thanks." Set "flag":"early_bridge". Do not accept. Do not soften into a yes later in the same turn.',
 '',
 '=== AFTER YOU ACCEPT ===',
-'You have said yes. Now WAIT. Do not offer your number. Do not propose a day. If he asks for your number, your email, your calendar, or names a specific day, give it and the conversation is complete — set "outcome":"captured".',
+'You have said yes. Now WAIT. Do NOT offer your number, your email or a day. Not as a friendly gesture, not because he mentioned coffee a second time, not to be helpful. Real prospects at a party do not do his job for him. Only if he explicitly asks for your number, your email, your calendar, or names a specific day do you give it — and then the conversation is complete, set "outcome":"captured".',
 'If he says something vague instead, like "great, I\'ll be in touch" or "sounds good", respond with something equally vague and drifting — "yeah, sounds good" — and start to move away. Do not help him. If he still has not pinned anything down after two turns, say goodbye and set "outcome":"lost". Most advisors lose it exactly here.',
 '',
 '=== LEAVING ===',
@@ -1092,8 +1092,13 @@ async function prospectTurn(first){
                cue:String(out.scene.cue||run.trigger.cue)};
   }
   if(out.opened) run.opened=true;
+  /* They sometimes hand over a number nobody asked for. Capture is his move to make. */
+  const lastAdv=run.turns.slice().reverse().find(t=>t.role==="advisor");
+  const askedForIt=!!(lastAdv&&hitAny(CAPTURE,lastAdv.text));
   const newGoals=[];
-  (out.goals||[]).forEach(n=>{n=Number(n); if(n>=1&&n<=6&&run.opened&&!run.goals.includes(n)){run.goals.push(n);newGoals.push(n)}});
+  (out.goals||[]).forEach(n=>{n=Number(n);
+    if(n===6&&!askedForIt) return;
+    if(n>=1&&n<=6&&run.opened&&!run.goals.includes(n)){run.goals.push(n);newGoals.push(n)}});
   run.goals.sort();
   if(newGoals.includes(5)&&!run.bridgeTurn) run.bridgeTurn=run.m.turns;
   run.lastFlag=out.flag||null;
@@ -1192,7 +1197,7 @@ async function scoreRun(){
       drill:"Run it again. You may not say anything that is not a question until they resonate.",verdict:""});
   if(!SAMPLE) return fb();
   try{
-    const o=await SAMPLE.json(scoringPrompt(),{tier:pref("scoretier","default"),temperature:0,retry:2});
+    const o=await SAMPLE.json(scoringPrompt(),{tier:pref("scoretier","default"),maxTokens:1800,retry:2,timeout:60000});
     const sc={},why={};
     PHASE.forEach(p=>{
       const row=(o.scores||{})[p[0]]||{};
@@ -1346,7 +1351,7 @@ const sampler=()=>({json:async(input,opt)=>{
     try{
       const r=await fetch("/api/chat",{method:"POST",headers:chatHeaders(),signal:ac.signal,
         body:JSON.stringify({input,tier:o.tier||"default",cachePrefix:!!o.cachePrefix,
-          temperature:o.temperature})});
+          maxTokens:o.maxTokens})});
       clearTimeout(timer);
       if(r.status===401){location.reload();throw new Error("session")}
       if(r.status===429||r.status>=500){ lastErr=new Error("chat "+r.status);
