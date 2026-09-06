@@ -57,78 +57,34 @@ API route — is served without a valid session, except `GET /api/ping`.
 - `DELETE /api/key` — forget the saved key.
 - `GET  /api/runs` / `POST /api/runs` — run history (best-effort file store; the browser also keeps its own copy).
 
-## Method
+## Method — 2Q + Bridge
 
-Trains a nine-step sequence: recognize the trigger, ask what made it come up now,
-scope it business/personal/both, name the real category, ask who is helping them
-think through it, expose the gap without criticizing the incumbent, use a micro-story,
-decline to solve in the social setting, bridge to a second conversation.
+The trainer drills one reflex in the 60-120 second window between a social remark
+and an agreed coffee. It is not a planning simulator.
 
-Scored 1-10 across ten categories out of 100: Premature Advice Control, Trigger
-Recognition, Emotional Driver Discovery, Question Progression, Incumbent Setup
-Discovery, Wedge Creation, Story/Analogy Use, Frame Control, Brevity, Second
-Conversation Bridge. A competent untrained advisor lands 45-55.
+Six states, each with a pass condition:
 
-The prospect's interest is recomputed client-side from the model's own delta codes
-rather than trusted, and the acceptance gate is enforced locally: interest above the
-difficulty threshold, steps 2/5/6 satisfied, not currently solving, and a clean bridge.
+1. **Positioning** — say what you do, briefly, aimed at owners and complex families.
+2. **Why now** — "What made that come up now?"
+3. **Bucket** — narrow to a category, or business vs personal.
+4. **Pattern insight** — one line of recognition. No solution, no product.
+5. **Coffee bridge** — move it out of the room, low pressure, with a timeframe.
+6. **Contact capture** — the number, the calendar, or a named day.
 
-A parallel coach call runs per exchange on the quick tier. It never blocks the
-prospect's reply. Harmful moves are spoken aloud; everything else is visual only.
+States are tracked as goals achieved, not a fixed sequence, so answering out of order
+still counts; timing is scored separately.
 
-## Analytics
+**Bridge timing is scored explicitly.** The prospect emits a resonance cue ("that's
+exactly what I haven't figured out"). Bridging within one turn of it scores 9-10.
+Bridging before goals 2 and 3 are met caps the phase at 4. Missing the cue caps it at 5.
 
-Day / week / month / year. Score trend per category, floor vs ceiling, binding
-constraint, discovery vs delivery, scripts-vs-skill gap, hollow win rate, and the
-share of runs where the prospect named the real issue themselves. Periods below the
-minimum sample size never render an average - they show the raw values and say how
-many more reps are needed.
+Scored 1-10 across the six phases, 60 total, plus one of three results: **success**
+(coffee accepted and a next step pinned), **partial** (coffee, vague close), **missed**.
 
-## Cost
-
-Three levers, measured on an 8-turn run:
-
-| | per run | 20/day | 6 weeks at 20/day |
-|---|---|---|---|
-| Before | $0.124 | $2.47 | $104 |
-| Prompt-cached brief + Haiku coach + Sonnet scoring | $0.060 | $1.20 | $51 |
-| Same, keeping Opus scoring | $0.087 | $1.73 | $73 |
-
-- The prospect brief is ~1,900 tokens and was resent in full every turn. It now sits
-  alone in message 0 with `cache_control: ephemeral`, and every volatile counter moved
-  to the tail of the newest user turn, so the prefix is byte-identical all run and
-  turns 2..n read it at a tenth of the input price.
-- The per-exchange coach runs on the `quick` tier (Haiku), not Sonnet. It is 8 calls
-  a run, so it was the second-largest line.
-- Scoring depth is a setting. Standard is Sonnet; Deep is Opus at about 2.5x the
-  scoring cost.
-- Every response's `usage` is returned to the browser, priced client-side including
-  cache reads and writes, stored on the run, and shown under Progress.
-
-## Casting
-
-Every run casts a prospect: sex drawn from a per-scenario probability weighted to who
-actually holds the role (0.07 for an orthopedic surgeon, 0.50 for a family office heir,
-0.45 for a staffing-firm owner), a Miami-appropriate first name drawn from an origin
-bucket (Cuban-American, Colombian, Venezuelan, Anglo South Florida, Northeastern
-transplant) weighted by age and archetype, and an accent template that drives both the
-prospect prompt and the voice. Women aged 66+ in retired-executive scenarios draw a
-widow variant 40% of the time. Nothing is locked to one sex.
-
-## Voice
-
-`speechSynthesis` on iOS Safari can only reach Apple's pre-installed compact voices -
-Samantha, Aaron, Nicky. Enhanced, Premium and Siri voices are withheld from web pages
-by design, so no amount of tuning makes the iPhone sound natural. Chrome on macOS does
-expose downloaded Enhanced/Premium voices.
-
-So: hosted TTS is primary when `OPENAI_API_KEY` is set (`gpt-4o-mini-tts`, whose
-`instructions` field carries the accent and the distracted-at-a-party delivery),
-served through `POST /api/tts` and played sentence by sentence through one AudioContext.
-The built-in engine is the automatic fallback, with platform-aware ordered voice
-preferences, a novelty-voice exclusion list, per-sex pitch, and jittered rate.
-Spanish-locale voices reading English are deliberately never used - they apply Spanish
-letter-to-sound rules to English words and read as a struggling non-native speaker.
+The prospect punishes in character rather than breaking role: a named product makes
+them cooler and shorter, over 45 words makes them distracted, an early bridge gets
+deflected. After accepting coffee they will never volunteer their number — silence
+until you ask, then two vague turns and they leave.
 
 ## Drive mode
 
